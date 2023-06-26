@@ -1,0 +1,280 @@
+body {
+  font-family: Gordita, Roboto, Oxygen, Ubuntu, Cantarell,
+    'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+a {
+  margin-right: 1rem;
+}
+
+
+.page-wrapper {
+  text-align: center;
+  padding: 1em;
+  margin: 0 auto;
+  max-width: 100vw;
+  overflow: hidden;
+  header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3rem;
+    h1.compact {
+      font-size: 1.25rem;
+      margin: 0.25em auto;
+      padding: 0 5%;
+      text-align: center;
+      transform: scaleX(1.5);
+    }
+  }
+  main {
+    display: grid;
+    padding: 2.5rem 2.5% 1rem 2.5%;
+    ul {
+      margin-block-start: 0;
+      margin-block-end: 0;
+      margin-inline-start: 0;
+      margin-inline-end: 0;
+      padding-inline-start: 0;
+    }
+
+    .status-row {
+      flex-flow: row wrap;
+      justify-content: center;
+      > h4 {
+        margin: 0.125rem 2rem 0.125rem 0;
+      }
+    }
+  }
+  pre {
+    width: 90%;
+    max-width: 100vw;
+    white-space: wrap;
+  }
+  .top-controls {
+    input {
+      font-size: 1rem;
+    }
+  }
+}
+
+main {
+  table {
+    thead {
+      th {
+        font-size: 0.8em;
+      }
+    }
+    td {
+      text-align: left;
+      padding: 0.25em 0.5em;
+      &.numeric {
+        text-align: right;
+      }
+    }
+  }
+  .results-pane {
+    margin: 2.5rem auto 2rem auto;
+  }
+}
+
+.page-wrapper > header,
+.status-row,
+.top-controls {
+  background-color: white;
+  z-index: 20;
+}
+
+.status-row,
+.top-controls {
+  position: fixed;
+  left: 2.5%;
+  right: 2.5%;
+  justify-content: center;
+  .actions {
+    margin-left: 2rem;
+  }
+}
+
+.status-row {
+  top: 4.5rem;
+}
+.top-controls {
+  top: 2.5rem;
+  border: none;
+  margin-inline-start: 0;
+  margin-inline-end: 0;
+  padding-block-start: 0;
+  padding-inline-start: 0;
+  padding-inline-end: 0;
+  padding-block-end: 0;
+}
+p {
+  margin: 1rem auto;
+  line-height: 1.35;
+}
+
+dl {
+  dd {
+    margin-inline-start: 0;
+  }
+}
+
+.grid-cols,
+.grid-2 {
+  display: grid;
+  column-gap: 0.5em;
+}
+
+.grid-2 {
+  grid-template-columns: 1fr 1fr;
+  column-gap: 0.5em;
+}
+
+main dl.grid-2 {
+  grid-template-columns: 1fr 3fr;
+  column-gap: 0.5em;
+  dt {
+    font-weight: bold;
+    text-align: right;
+  }
+  dd {
+    text-align: left;
+    padding: 0;
+  }
+  &.variant-set {
+    max-width: 16em;
+    grid-template-columns: 1fr 1fr;
+    dt {
+      font-weight: normal;
+      font-size: 0.75em;
+      font-style: italic;
+    }
+    dd {
+      &.degree {
+        text-align: right;
+      }
+    }
+  }
+}
+
+.flex-grid {
+  grid-template-columns: 3fr 2fr;
+  @media (min-width: 50rem) {
+    grid-template-columns: 3fr 2fr 3fr 2fr;
+  }
+  @media (min-width: 50rem) {
+    grid-template-columns: auto 10em auto 10em auto 10em;
+  }
+  column-gap: 0.5em;
+  dt {
+    text-align: right;
+    font-style: italic;
+    font-size: 0.75em;
+  }
+  dd {
+    padding-left: 0;
+    padding-right: 3em;
+    text-align: left;
+    white-space: nowrap;
+    &.degree {
+      text-align: right;
+    }
+  }
+}
+
+main {
+  .extra-data-row {
+    .variant-set {
+      min-width: 20em;
+    }
+  }
+}
+
+.place-name-wrapper {
+  position: relative;
+  max-width: 20em;
+  display: flex;
+  flex-flow: column nowrap;
+}
+
+.suggestion-wrapper {
+  position: relative;
+  overflow: visible;
+  .suggestions {
+    max-width: 20em;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    text-align: left;
+    li {
+      width: 100%;
+    }
+  }
+}
+
+
+
+.space-parts,
+.slash-parts {
+  > span,
+  > em,
+  > strong,
+  > time {
+    display: inline-block;
+    margin-right: 0.25em;
+    
+    &::after {
+      display: inline-block;
+      position: relative;
+      font-size: 0.8em;
+      margin-left: 0.25em;
+      bottom: 0.1em;
+    }
+    &:last-child {
+      margin-right: 0;
+      &::after {
+        margin-left: 0;
+        content: "";
+      }
+    }
+  }
+}
+.space-parts {
+  > span::after,
+  > em::after,
+  > strong::after,
+  > time::after {
+    content: " ";
+  }
+}
+.slash-parts {
+  > span::after,
+  > em::after,
+  > strong::after,
+  > time::after {
+    content: "/";
+  }
+}
+
+.plain {
+  list-style-type: none;
+  li {
+    margin: 0;
+  }
+}
+
+.suggestions {
+  background-color: white;
+  border: solid 1px #cccccc;
+  max-height: 12em;
+  overflow-y: auto;
+  li {
+    cursor: pointer;
+    &:hover {
+      background-color: rgba(102,102,102, 0.125);
+    }
+  }
+}

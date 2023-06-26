@@ -1,0 +1,31 @@
+{
+  "name": "acfront",
+  "scripts": {
+    "dev": "solid-start dev",
+    "build": "solid-start build",
+    "start": "solid-start start -p 4001"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^18.11.18",
+    "esbuild": "^0.14.54",
+    "postcss": "^8.4.21",
+    "sass": "^1.62.1",
+    "solid-start-node": "^0.2.19",
+    "typescript": "^4.9.4",
+    "unocss": "^0.53.1",
+    "vite": "^4.1.4"
+  },
+  "dependencies": {
+    "@solidjs/meta": "^0.28.2",
+    "@solidjs/router": "^0.8.2",
+    "date-fns": "^2.30.0",
+    "date-fns-timezone": "^0.1.4",
+    "solid-js": "^1.7.2",
+    "solid-start": "^0.2.26",
+    "undici": "^5.15.1"
+  },
+  "engines": {
+    "node": ">=16.8"
+  }
+}
