@@ -269,7 +269,7 @@ export class KeyNumericValue {
         this.key = key;
         switch (key.toLowerCase()) {
           case "yogi":
-          case "ayayogi":
+          case "avayogi":
           case "housesign":
           case "house_sign":
             this.type = "int";

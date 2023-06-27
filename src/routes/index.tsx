@@ -1,10 +1,23 @@
+import { createEffect, createSignal } from "solid-js";
 import { Title } from "solid-start";
 import ControlPane from "~/components/ControlPane";
 
 export default function Home() {
+  const [devBy, setDevBy] = createSignal("Multifaceted Web Services");
+  createEffect(() => { 
+    if (window instanceof Window) {
+      const {hostname} = window.location;
+      if (typeof hostname === "string") {
+        if (/(findingyou|localhost)/.test(hostname)) {
+          setDevBy("FindingYou");
+        }
+      }
+    }
+
+  });
   return (
     <>
-      <Title>Hello World</Title>
+      <Title>AstroCalc</Title>
 
     <div class="page-wrapper">
       <header class="page-header">
@@ -16,7 +29,7 @@ export default function Home() {
       </main>
       <footer>
           <p>
-        © 2023: Multifaceted Web Services
+            <span class="copyright-year">© 2023: </span><span class="developed-by">{ devBy() }</span>
         </p>
       </footer>
       </div>
