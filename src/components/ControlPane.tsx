@@ -1,11 +1,11 @@
 import { For, Show, createEffect, createSignal } from "solid-js";
 import { fetchChartData, fetchTz, searchLocation } from "~/api/fetch";
-import { formatDate, notEmptyString, yearsAgoDateString, zeroPad } from "~/api/utils";
+import { formatDate, notEmptyString, yearsAgoDateString } from "~/api/utils";
 import { updateInputValue } from "~/api/forms";
-import { decPlaces4, degAsDms, degAsLatStr, degAsLngStr, dmsStringToDec, hrsMinsToString, smartCastFloat, smartCastInt } from "~/api/converters";
+import { decPlaces4, degAsLatStr, degAsLngStr, dmsStringToDec, hrsMinsToString, smartCastFloat, smartCastInt } from "~/api/converters";
 import { fetchGeo, getGeoTzOffset } from "~/api/geoloc-utils";
 import { AstroChart, GeoLoc, GeoName, TimeZoneInfo, latLngToLocString } from "~/api/models";
-import { julToDateParts, localDateStringToJulianDate } from "~/api/julian-date";
+import { dateStringToJulianDate, julToDateParts, localDateStringToJulianDate } from "~/api/julian-date";
 import ChartData from "./ChartaData";
 import { fromLocal, toLocal } from "~/lib/localstore";
 import AyanamashaSelect from "./AyanamshaSelect";
@@ -50,7 +50,7 @@ export default function ControlPanel() {
 
   const utcDateString = () => {
     const dt = [dateString(), timeString()].join('T');
-    return localDateStringToJulianDate(dt, 0 - tzOffset()).toISOSimple();
+    return dateStringToJulianDate(dt, 0 - tzOffset()).toISOSimple();
   }
 
   const fetchChart = () => {
@@ -268,7 +268,7 @@ export default function ControlPanel() {
           <time class="time">{timeString()}</time>
           (<em title={tzOffset().toString()}>tz: {hrsMinsToString(offsetHrs(), offsetMins())}</em> <Show when={ tz()?.valid }><em title={ tz()?.zoneName }>{ tz()?.abbreviation }</em></Show>)
         </h4>
-        <h4 class="space-parts"><strong>UTC</strong> <em>{utcDateString()}</em></h4>
+        <h4 class="space-parts"><strong>UTC</strong> <em title={ tzOffset().toString() }>{utcDateString()}</em></h4>
         <h4 class="slash-parts">
           <span class="lat" title={decPlaces4(lat())} >{degAsLatStr(lat())}</span>&nbsp;
           <span class="lng" title={decPlaces4(lng())}>{degAsLngStr(lng())}</span>

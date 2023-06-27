@@ -103,6 +103,7 @@ main {
 .top-controls {
   top: 2.5rem;
   border: none;
+  z-index: 24;
   margin-inline-start: 0;
   margin-inline-end: 0;
   padding-block-start: 0;
@@ -202,8 +203,10 @@ main {
 .suggestion-wrapper {
   position: relative;
   overflow: visible;
+  z-index: 30;
   .suggestions {
     max-width: 20em;
+    z-index: 31;
     position: absolute;
     top: 0;
     left: 0;

@@ -85,7 +85,7 @@ export const searchLocation = async (place: string, cc = ""): Promise<any> => {
     place,
     cc,
     fuzzy: 100,
-    max: 20,
+    max: 30,
   };
   return await fetchContentGeo(method, params);
 };
