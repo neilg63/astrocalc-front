@@ -148,12 +148,16 @@ export const localTimeZoneOffset = (): number => {
 export const dateStringToJulianDay = (
   dateStr = "",
   autoOffset = false,
-  offsetSecs = 0
+  offsetSecs = 0,
+  autoAndOverride = true
 ): number => {
   const dtObj = new Date(dateStr);
   const ts = dtObj.getTime() / 1000;
   // subtract offset applied to Date object by the browser locale settings
-  const tsOffset = autoOffset ? dtObj.getTimezoneOffset() * 60 : offsetSecs;
+  const autoOffsetSecs = autoAndOverride ? dtObj.getTimezoneOffset() * 60 : 0;
+  const tsOffset = autoOffset
+    ? dtObj.getTimezoneOffset() * 60
+    : offsetSecs + autoOffsetSecs;
   return unixTimeToJul(ts - tsOffset);
 };
 
@@ -491,7 +495,7 @@ export const currentJulianDate = (utc = false) => {
 };
 
 export const dateStringToJulianDate = (dateStr = "", offset = 0) => {
-  const jd = dateStringToJulianDay(dateStr);
+  const jd = dateStringToJulianDay(dateStr, true);
   return new JulDate(jd, offset);
 };
 

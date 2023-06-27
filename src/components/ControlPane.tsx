@@ -44,7 +44,6 @@ export default function ControlPanel() {
     const dt = [dateString(), timeString()].join('T');
     const loc = latLngToLocString(lat(), lng());
     const { jd } = localDateStringToJulianDate(dt, tzOffset());
-    console.log(jd, tzOffset())
     return { dt, jd, loc };
   }
 
@@ -199,7 +198,8 @@ export default function ControlPanel() {
       const tzObj = tzData.valid ? tzData.data : null;
       let tzInfo = new TimeZoneInfo(tzObj);
       if (tzInfo.valid) {
-        setOffsetHrs(tzInfo.hours)
+        const hrs = tzInfo.hours < 0 ? Math.ceil(tzInfo.hours) : Math.floor(tzInfo.hours);
+        setOffsetHrs(hrs)
         setOffsetMins(tzInfo.minutes);
         setTzOffset(tzInfo.utcOffset);
         setTz(tzInfo);
