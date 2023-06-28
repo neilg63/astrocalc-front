@@ -4,9 +4,8 @@ import { matchAyaNameByNum } from "~/api/mappings";
 import { SphutaSet } from "~/api/models";
 
 export default function SphutaGroup({ data }: { data: SphutaSet }) {
-  return <dl class="grid-cols flex-grid">
-    <dt>Ayanamasha</dt>
-    <dd>{ matchAyaNameByNum(data.ayanamashaNum)}</dd>
+  const title = `Ayanamasha: ${matchAyaNameByNum(data.ayanamashaNum)}`
+  return <dl class="grid-cols flex-grid" title={title}>
     <For each={data.items}>
       {(item) => <>
         <dt>{item.name}</dt>

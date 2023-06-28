@@ -7,6 +7,20 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
   const ayaOffset = applyAya ? data.ayanamsha : 0;
   //const toDegDns = (deg: number): string => degAsDms(subtractLng360(deg, ayaOffset));
   const singleVariantSetMode = data.hasVariants && data.numVariants === 1;
+
+  const toTabGrid = () => {
+    const rows = data.bodies.map(body => {
+      return [body.longitude(data.ayanamsha), body.lng, body.lngSpeed, body.lat, body.latSpeed, body.rectAscension, body.declination,body.azimuth, body.altitude].join("\t");
+    })
+    const header = ['Sidereal longitude', 'Tropical longitude', 'Lng. Speed', 'latitude', 'latSpeed', 'rectAscension', 'declination','azimuth', 'altitude']
+    return [header, ...rows].join("\n")
+  }
+
+  const copyGrid = () => {
+    const grid = toTabGrid();
+    navigator.clipboard.writeText(grid);
+  }
+  const footColSpan = singleVariantSetMode ? 13 : 8;
   return <table>
     <thead>
       <tr>
@@ -17,6 +31,8 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
         <th>Lat. Speed</th>
         <th>Right ascension</th>
         <th>Declination</th>
+        <th>Azimuth</th>
+        <th>Altitude</th>
         <Show when={singleVariantSetMode}>
           <th>Chara Karaka</th>
           <th>House</th>
@@ -34,8 +50,10 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
           <td class="numeric lng-speed">{decPlaces4(item.lngSpeed)}</td>
           <td class="numeric lat">{degAsDms(item.lat)}</td>
           <td class="numeric lat-speed">{decPlaces4(item.latSpeed)}</td>
-          <td class="numeric lat">{degAsDms(item.rectAscension)}</td>
-          <td class="numeric lat">{degAsDms(item.declination)}</td>
+          <td class="numeric ras">{degAsDms(item.rectAscension)}</td>
+          <td class="numeric dec">{degAsDms(item.declination)}</td>
+          <td class="numeric azi">{degAsDms(item.azimuth)}</td>
+          <td class="numeric alt">{degAsDms(item.altitude)}</td>
           <Show when={singleVariantSetMode}>
             <td class="numeric chara-karaka">{ item.firstVariant.charaKaraka}</td>
             <td class="numeric house">
@@ -51,7 +69,10 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
           </Show>
       </tr>}
       </For>
-      </tbody>
+    </tbody>
+    <tfoot>
+      <tr><th colspan={footColSpan}><button onClick={() => copyGrid()}>Copy</button></th></tr>
+    </tfoot>
   </table>
 
 }

@@ -8,6 +8,7 @@ a {
 }
 
 
+
 .page-wrapper {
   text-align: center;
   padding: 1em;
@@ -123,10 +124,16 @@ dl {
   }
 }
 
+.grid,
 .grid-cols,
 .grid-2 {
   display: grid;
   column-gap: 0.5em;
+}
+
+.flex-column {
+  display: flex;
+  flex-flow: column nowrap;
 }
 
 .grid-2 {
@@ -138,7 +145,9 @@ main dl.grid-2 {
   grid-template-columns: 1fr 3fr;
   column-gap: 0.5em;
   dt {
-    font-weight: bold;
+    font-weight: normal;
+    font-style: italic;
+    font-size: 0.8em;
     text-align: right;
   }
   dd {
@@ -161,12 +170,34 @@ main dl.grid-2 {
   }
 }
 
+.tz-offset-control {
+  display: flex;
+  flex-flow: row nowrap;
+  input {
+    text-align: right;
+    max-width: 2em;
+  }
+}
+
+.top-info {
+  .flex-grid {
+    grid-template-columns: auto 10em;
+    @media (min-width: 60rem) {
+      grid-template-columns: auto 10em auto 10em;
+    }
+
+    @media (min-width: 80rem) {
+      grid-template-columns: auto 10em auto 10em auto 10em;
+    }
+  }
+}
+
 .flex-grid {
   grid-template-columns: 3fr 2fr;
-  @media (min-width: 50rem) {
-    grid-template-columns: 3fr 2fr 3fr 2fr;
+  @media (min-width: 40rem) {
+    grid-template-columns: auto 10em auto 10em;
   }
-  @media (min-width: 50rem) {
+  @media (min-width: 60rem) {
     grid-template-columns: auto 10em auto 10em auto 10em;
   }
   column-gap: 0.5em;
@@ -174,6 +205,7 @@ main dl.grid-2 {
     text-align: right;
     font-style: italic;
     font-size: 0.75em;
+    white-space: nowrap;
   }
   dd {
     padding-left: 0;
@@ -191,6 +223,29 @@ main {
     .variant-set {
       min-width: 20em;
     }
+  }
+}
+
+.top-info {
+  > dl {
+    margin-right: 5%;
+    &:last-child {
+      margin-right: 0;
+    }
+  } 
+}
+
+.top-grid {
+  grid-template-areas: "datetime actions"
+                        "location actions";
+  .date-time-bar {
+    grid-area: datetime;
+  }
+  .location-bar {
+    grid-area: location;
+  }
+  .actions {
+    grid-area: actions;
   }
 }
 

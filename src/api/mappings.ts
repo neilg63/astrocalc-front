@@ -8,6 +8,11 @@ export interface KeyNameNum {
 
 export const ayanamshas: KeyNameNum[] = [
   {
+    key: "",
+    name: "tropical",
+    num: 0,
+  },
+  {
     key: "tc",
     name: "true_citra",
     num: 27,
@@ -61,11 +66,6 @@ export const ayanamshas: KeyNameNum[] = [
     key: "at",
     name: "aldebaran_15_tau",
     num: 14,
-  },
-  {
-    key: "",
-    name: "tropical",
-    num: 0,
   },
   {
     key: "gc",
@@ -526,3 +526,27 @@ export const houseSystems = {
   Y: "APC houses",
   i: "Sunshine/alt.",
 };
+
+export const weekDayName = (num = 1, mode = "iso") => {
+  const isoNum = mode === "sun" ? (num === 7 ? 1 : num + 1) : num;
+  switch (isoNum) {
+    case 1:
+      return "Monday";
+    case 2:
+      return "Tuesday";
+    case 3:
+      return "Wednesday";
+    case 4:
+      return "Thursday";
+    case 5:
+      return "Friday";
+    case 6:
+      return "Saturday";
+    case 7:
+      return "Sunday";
+    default:
+      return "-";
+  }
+};
+
+export const weekDayNameSun = (num = 1) => weekDayName(num, "sun");

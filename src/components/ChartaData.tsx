@@ -9,11 +9,10 @@ import PositionTable from "./PositionTable";
 
 export default function ChartData({ data, applyAya }: {data: AstroChart, applyAya: boolean}) {
   const ayaOffset = applyAya ? data.ayanamsha : 0;
-  const toDegDns = (deg: number): string => degAsDms(subtractLng360(deg, ayaOffset));
+  const toDegDms = (deg: number): string => degAsDms(subtractLng360(deg, ayaOffset));
   return <section>
-    <h2></h2>
-    <div class="row grid-2">
-      <dl class="grid-2">
+    <div class="flex flow-row top-info">
+      <dl class="grid grid-2">
         <dt>Location</dt>
         <dd class="slash-parts"><span class="lat">{degAsLatStr(data.geo.lat)}</span><span class="lng">{degAsLngStr(data.geo.lng)}</span></dd>
         <dt>Local time</dt>
@@ -25,8 +24,38 @@ export default function ChartData({ data, applyAya }: {data: AstroChart, applyAy
           <span>{snakeToWords(data.ayanamshaKey)}</span>
           <span>{ degAsDms(data.ayanamsha) }</span>
         </dd>
-        <dt>Ascendant</dt>
-        <dd>{ toDegDns(data.points.ascendant) }</dd>
+      </dl>
+      <dl class="grid flex-grid">
+        <dt>ascendant</dt>
+        <dd title={decPlaces4(data.points.ascendant)}>{toDegDms(data.points.ascendant)}</dd>
+        <dt>ARMC</dt>
+        <dd title={decPlaces4(data.points.armc)}>{toDegDms(data.points.armc)}</dd>
+        <dt>Ascendant azimuth</dt>
+        <dd title={decPlaces4(data.points.ascAzi)}>{degAsDms(data.points.ascAzi)}</dd>
+        <dt>Ascendant declination</dt>
+        <dd>{degAsDms(data.points.ascDec)}</dd>
+        <dt>Ascendant right ascension</dt>
+        <dd>{degAsDms(data.points.ascRa)}</dd>
+        <dt title="(Walter Koch)">co-ascendant 1</dt>
+        <dd title={decPlaces4(data.points.coasc1) }>{degAsDms(data.points.coasc1)}</dd>
+        <dt title="(Michael Munkasey)">Co-ascendant 2</dt>
+        <dd title={decPlaces4(data.points.coasc2) }>{degAsDms(data.points.coasc2)}</dd>
+        <dt>equatorial ascendant</dt>
+        <dd title={decPlaces4(data.points.equasc) }>{degAsDms(data.points.equasc)}</dd>
+        <dt>MC</dt>
+        <dd title={decPlaces4(data.points.mc) }>{toDegDms(data.points.mc)}</dd>
+        <dt>MC Altitude</dt>
+        <dd title={decPlaces4(data.points.mcAlt) }>{degAsDms(data.points.mcAlt)}</dd>
+        <dt>MC azimuth</dt>
+        <dd title={decPlaces4(data.points.mcAzi)}>{degAsDms(data.points.mcAzi)}</dd>
+        <dt>MC declination</dt>
+        <dd title={decPlaces4(data.points.mcDec)}>{degAsDms(data.points.mcDec)}</dd>
+        <dt>MC right ascension</dt>
+        <dd title={decPlaces4(data.points.mcRa)}>{degAsDms(data.points.mcRa)}</dd>
+        <dt title="(Michael Munkasey)">Polar ascendant</dt>
+        <dd>{degAsDms(data.points.polasc)}</dd>
+        <dt>Vertex</dt>
+        <dd>{toDegDms(data.points.vertex)}</dd>
       </dl>
       <IndianTimeGroup data={data.indianTime} />
     </div>

@@ -66,8 +66,8 @@ export default function ControlPanel() {
     });
   }
   const opneChart = () => setShowData(true);
-  const updateDate = (e: Event) => updateInputValue(e, setDateString);
-  const updateTime = (e: Event) => updateInputValue(e, setTimeString);
+  const updateDate = (e: Event) => updateInputValue(e, setDateString, '\\d\\d\\d\\d-[012][0-9]-[0123][0-9]');
+  const updateTime = (e: Event) => updateInputValue(e, setTimeString,'[012][0-9]:[0-5][0-9](:[0-5][0-9])?');
   const updateLat = (e: Event) => {
     updateInputValue(e, setLatString);
     const deg = dmsStringToDec(latString());
@@ -229,38 +229,42 @@ export default function ControlPanel() {
 
   return (
     <>
-      <fieldset class="top-controls flex row" >
-        <input type="date" value={dateString()} size="12" onChange={(e) => updateDate(e)} />
-        <input type="time" value={timeString()} size="12" onChange={(e) => updateTime(e)} />
-        <div class="place-name-wrapper flex column">
-          <input type="text" list="place-names" value={placeString()} size="40" onKeyUp={(e) => searchPlace(e)} />
-          <div class="suggestion-wrapper">
-            <ul class="plain suggestions" id="place-name-list">
-              <For each={suggestions()}>
-                {(item) => <li data-coords={item.coords} onClick={(e) => selectPlace(e)}>{item.placeName}</li>}
-              </For>
-            </ul>
+      <fieldset class="top-controls grid top-grid" >
+        <div class="date-time-bar flex flex-row">
+          <input type="date" value={dateString()} size="12" onChange={(e) => updateDate(e)} />
+        
+          <div class="tz-offset-control">
+            <input type="number" class="hours" value={offsetHrs()} size="1" onChange={(e) => updateOffset(e, false)} step="1" min="-15" max="15" />
+            <input type="number" class="minutes" value={offsetMins()} size="1" onChange={(e) => updateOffset(e, true)} step="1" min="0" max="59" />
+          </div>
+          <AyanamashaSelect value={ayaKey()} onSelect={(e: Event) => selectAyaOpt(e)} />
+          <div class="field">
+            <input id="toggle-sidereal" type="checkbox" name="apply_ayanamsha" checked={applyAya()} onChange={() => updateApplyAya()} />
+            <label for="toggle-sidereal">Sidereal</label>
           </div>
         </div>
-
-        <input type="text" value={latString()} pattern="-?[0-9][0-9]?º?\s+[0-9][0-9]?'?\s+[0-9][0-9]?\s*(N|S)" size="16" onChange={(e) => updateLat(e)} />
-        <input type="text" value={lngString()} pattern="-?[0-9][0-9]?[0-9]?º?\s+[0-9][0-9]?'?\s+[0-9][0-9]?\s*(E|W)" size="16" onChange={(e) => updateLng(e)} />
-        <div class="tz-offset-control">
-          <input type="number" class="hours" value={offsetHrs()} size="1" onChange={(e) => updateOffset(e, false)} step="1" min="-15" max="15" />
-          <input type="number" class="minutes" value={offsetMins()} size="1" onChange={(e) => updateOffset(e, true)} step="1" min="0" max="59" />
-        </div>
-        <AyanamashaSelect value={ayaKey()} onSelect={(e: Event) => selectAyaOpt(e)} />
-        <div class="field">
-          <input id="toggle-sidereal" type="checkbox" name="apply_ayanamsha" checked={applyAya()} onChange={() => updateApplyAya()} />
-          <label for="toggle-sidereal">Sidereal</label>
-        </div>
-        <div class="actions flex flex-row">
+        <div class="actions flex flex-column">
           <button class="increment" onClick={() => updateGeoTz()}>Check time offset</button>  
           <button class="increment" onClick={() => fetchChart()}>
             Calculate
             </button>
         </div>
-        
+        <div class="location-bar flex flex-row">
+            <input type="time" value={timeString()} size="12" onChange={(e) => updateTime(e)} />
+          <div class="place-name-wrapper flex column">
+            <input type="text" list="place-names" value={placeString()} size="40" onKeyUp={(e) => searchPlace(e)} />
+            <div class="suggestion-wrapper">
+              <ul class="plain suggestions" id="place-name-list">
+                <For each={suggestions()}>
+                  {(item) => <li data-coords={item.coords} onClick={(e) => selectPlace(e)}>{item.placeName}</li>}
+                </For>
+              </ul>
+            </div>
+          </div>
+
+          <input type="text" value={latString()} pattern="-?[0-9][0-9]?º?\s+[0-9][0-9]?'?\s+[0-9][0-9]?\s*(N|S)" size="16" onChange={(e) => updateLat(e)} />
+          <input type="text" value={lngString()} pattern="-?[0-9][0-9]?[0-9]?º?\s+[0-9][0-9]?'?\s+[0-9][0-9]?\s*(E|W)" size="16" onChange={(e) => updateLng(e)} />
+        </div>
       </fieldset>
       <div class="status-row flex flex-row">
         <h4 class="space-parts">

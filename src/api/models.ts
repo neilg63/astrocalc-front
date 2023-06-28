@@ -254,12 +254,35 @@ export class Variant {
   }
 }
 
+const SphutaKeys = [
+  "houseSign",
+  "yogi",
+  "avayogi",
+  "yogiSphuta",
+  "avayogiSphuta",
+  "sriLagna",
+  "induLagna",
+  "ghatiLagna",
+  "bhavaLagna",
+  "horaLagna",
+  "varnadaLagna",
+  "bijaSphuta",
+  "ksetraSphuta",
+  "pranaSphuta",
+  "dehaSphuta",
+  "mrtuSphuta",
+  "triSphuta",
+  "catuSphuta",
+  "pancaSphuta",
+];
+
 export class KeyNumericValue {
   key = "";
   value = 0;
   type = "deg";
+  weight = 0;
 
-  constructor(inData: any = null) {
+  constructor(inData: any = null, index = 0, sortSphutas = false) {
     if (inData instanceof Object) {
       const { key, value } = inData;
       if (typeof value === "number") {
@@ -278,6 +301,13 @@ export class KeyNumericValue {
             this.type = "deg";
             break;
         }
+      }
+      if (sortSphutas) {
+        const keyPos = SphutaKeys.indexOf(this.key);
+        const keyPosVal = keyPos < 0 ? 10000000 : keyPos * 10;
+        this.weight = keyPosVal + index;
+      } else {
+        this.weight = index;
       }
     }
   }
@@ -299,14 +329,19 @@ export class SphutaSet {
   ayanamashaNum = -1;
   items: KeyNumericValue[] = [];
 
-  constructor(inData: any = null) {
+  constructor(inData: any = null, sortSphutas = false) {
     if (inData instanceof Object) {
       const { num, items } = inData;
       if (typeof num === "number") {
         this.ayanamashaNum = num;
       }
       if (items instanceof Array) {
-        this.items = items.map((row) => new KeyNumericValue(row));
+        this.items = items.map(
+          (row, ri) => new KeyNumericValue(row, ri, sortSphutas)
+        );
+      }
+      if (sortSphutas) {
+        this.items.sort((a, b) => a.weight - b.weight);
       }
     }
   }
@@ -317,11 +352,13 @@ export class Graha {
   lng = 0;
   lat = 0;
   latSpeed = 0;
-  declination = 0;
   latSpeedEq = 0;
   lngSpeed = 0;
   lngSpeedEq = 0;
   rectAscension = 0;
+  declination = 0;
+  altitude = 0;
+  azimuth = 0;
   variants: Variant[] = [];
 
   constructor(inData: any = null) {
@@ -341,6 +378,8 @@ export class Graha {
             case "lngSpeedEq":
             case "declination":
             case "rectAscension":
+            case "altitude":
+            case "azimuth":
               this[key] = flVal;
               break;
           }
@@ -564,7 +603,7 @@ export class AstroChart {
         if (sphutas instanceof Array) {
           for (const row of sphutas) {
             if (row instanceof Object) {
-              this.sphutas.push(new SphutaSet(row));
+              this.sphutas.push(new SphutaSet(row, true));
             }
           }
         }
