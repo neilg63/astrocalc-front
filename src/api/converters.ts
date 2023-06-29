@@ -231,8 +231,9 @@ export const degAsDms = (
   flDeg: any,
   mode = "raw",
   precision = 3,
-  zeroPadDegrees = false
-) => {
+  zeroPadDegrees = false,
+  fullMode = true
+): string => {
   const dms = decDegToDms(flDeg % 360);
   const letter = addDegreeLetter(flDeg, mode);
   const letterInMiddle = ["mlat", "mlng"].includes(mode);
@@ -259,7 +260,21 @@ export const degAsDms = (
   const degVal = zeroPadDegrees ? zeroPad(degrees) : degrees.toString();
   const showMins = mode !== "deg" || dms.min > 0;
   const strMins = showMins ? zeroPad(dms.min, 2) + "'" : "";
-  return `${plusMinus}${degVal}º ${midLetter}${strMins}${strSecs}${suffix}`;
+  const firstPart = `${plusMinus}${degVal}º`;
+  let secondPart = "";
+  if (fullMode || dms.min > 0 || (dms.sec !== undefined && dms.sec > 0)) {
+    secondPart = `${midLetter}${strMins}${strSecs}`;
+  }
+  return `${firstPart} ${secondPart}${suffix}`;
+};
+
+export const degAsDmsFlexi = (
+  flDeg: any,
+  mode = "raw",
+  precision = 3,
+  zeroPadDegrees = false
+): string => {
+  return degAsDms(flDeg, mode, precision, zeroPadDegrees, false);
 };
 
 export const degAsLatStr = (deg: number): string => {

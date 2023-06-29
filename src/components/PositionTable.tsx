@@ -9,10 +9,10 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
   const singleVariantSetMode = data.hasVariants && data.numVariants === 1;
 
   const toTabGrid = () => {
-    const rows = data.bodies.map(body => {
+    const rows = data.grahas.map(body => {
       return [body.longitude(data.ayanamsha), body.lng, body.lngSpeed, body.lat, body.latSpeed, body.rectAscension, body.declination,body.azimuth, body.altitude].join("\t");
     })
-    const header = ['Sidereal longitude', 'Tropical longitude', 'Lng. Speed', 'latitude', 'latSpeed', 'rectAscension', 'declination','azimuth', 'altitude']
+    const header = ['Sid. Longitude', 'Trop. Longitude', 'Lng. Speed', 'Latitude', 'Lat. peed', 'Right Asc.', 'Declination','Azimuth', 'Altitude']
     return [header, ...rows].join("\n")
   }
 
@@ -43,19 +43,19 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
       </tr>
     </thead>
     <tbody>
-    <For each={data.bodies}>
+    <For each={data.grahas}>
         {(item) => <tr class={item.key}>
           <td class="key">{ matchNameByGrahaKey(item.key) }</td>
           <td class="numeric lng" title={ decPlaces4(item.lng)}>{degAsDms(item.longitude(ayaOffset))}</td>
-          <td class="numeric lng-speed">{decPlaces4(item.lngSpeed)}</td>
+          <td class="numeric lng-speed"><Show when={ item.showLngSpeed}>{decPlaces4(item.lngSpeed)}</Show></td>
           <td class="numeric lat">{degAsDms(item.lat)}</td>
-          <td class="numeric lat-speed">{decPlaces4(item.latSpeed)}</td>
+          <td class="numeric lat-speed"><Show when={item.showLatSpeed}>{decPlaces4(item.latSpeed)}</Show></td>
           <td class="numeric ras">{degAsDms(item.rectAscension)}</td>
           <td class="numeric dec">{degAsDms(item.declination)}</td>
           <td class="numeric azi">{degAsDms(item.azimuth)}</td>
           <td class="numeric alt">{degAsDms(item.altitude)}</td>
           <Show when={singleVariantSetMode}>
-            <td class="numeric chara-karaka">{ item.firstVariant.charaKaraka}</td>
+            <td class="numeric chara-karaka"><Show when={ item.firstVariant.hasCharaKaraka}>{ item.firstVariant.charaKaraka}</Show></td>
             <td class="numeric house">
               {item.firstVariant.house}
             </td>
@@ -71,7 +71,7 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
       </For>
     </tbody>
     <tfoot>
-      <tr><th colspan={footColSpan}><button onClick={() => copyGrid()}>Copy</button></th></tr>
+      <tr><th colspan={footColSpan}><button onClick={() => copyGrid()}>Copy table for spreadsheet</button></th></tr>
     </tfoot>
   </table>
 

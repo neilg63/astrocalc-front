@@ -6,6 +6,7 @@ import SphutaGroup from "./SphutaGroup";
 import UpaGroup from "./UpaGroup";
 import TransitionTable from "./TransitionTable";
 import PositionTable from "./PositionTable";
+import HouseGroup from "./HouseGroup";
 
 export default function ChartData({ data, applyAya }: {data: AstroChart, applyAya: boolean}) {
   const ayaOffset = applyAya ? data.ayanamsha : 0;
@@ -46,8 +47,10 @@ export default function ChartData({ data, applyAya }: {data: AstroChart, applyAy
         <dd title={decPlaces4(data.points.mc) }>{toDegDms(data.points.mc)}</dd>
         <dt>MC Altitude</dt>
         <dd title={decPlaces4(data.points.mcAlt) }>{degAsDms(data.points.mcAlt)}</dd>
-        <dt>MC azimuth</dt>
-        <dd title={decPlaces4(data.points.mcAzi)}>{degAsDms(data.points.mcAzi)}</dd>
+        <Show when={data.points.hasMcAzi}>
+          <dt>MC azimuth</dt>
+          <dd title={decPlaces4(data.points.mcAzi)}>{degAsDms(data.points.mcAzi)}</dd>
+        </Show>
         <dt>MC declination</dt>
         <dd title={decPlaces4(data.points.mcDec)}>{degAsDms(data.points.mcDec)}</dd>
         <dt>MC right ascension</dt>
@@ -70,6 +73,11 @@ export default function ChartData({ data, applyAya }: {data: AstroChart, applyAy
       <Show when={data.hasSphutas}>
         <For each={data.sphutas}>
           {(item) => <SphutaGroup data={item} />}
+        </For>
+      </Show>
+      <Show when={data.hsets.length > 0}>
+        <For each={data.hsets}>
+          {(item) => <HouseGroup data={item} />}
         </For>
       </Show>
     </div>

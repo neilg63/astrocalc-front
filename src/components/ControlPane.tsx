@@ -9,6 +9,8 @@ import { dateStringToJulianDate, julToDateParts, localDateStringToJulianDate } f
 import ChartData from "./ChartaData";
 import { fromLocal, toLocal } from "~/lib/localstore";
 import AyanamashaSelect from "./AyanamshaSelect";
+import OptionSelect from "./OptionSelect";
+import { houseSystems } from "~/api/mappings";
 
 interface LocDt {
   dt: string;
@@ -34,6 +36,7 @@ export default function ControlPanel() {
   const [tzOffset, setTzOffset] = createSignal(0);
   const [applyAya, setApplyAya] = createSignal(true);
   const [ayaKey, setAyaKey] = createSignal("tc");
+  const [hsys, setHsys] = createSignal("W");
   
   // const [json, setJson] = createSignal('')
   
@@ -55,7 +58,7 @@ export default function ControlPanel() {
   const fetchChart = () => {
     const { loc, jd } = extractDtLoc();
     setShowData(false);
-    fetchChartData({ ct: 1, jd, loc, it: 1, aya: ayaKey(), upa: 1, jyo: 1 }).then((data: any) => {
+    fetchChartData({ ct: 1, jd, loc, it: 1, aya: ayaKey(), upa: 1, jyo: 1, hsys: hsys() }).then((data: any) => {
       if (data instanceof Object && data.date.jd > 0) {
         setChart( new AstroChart(data, tz()));
         const str = JSON.stringify(data);
@@ -166,11 +169,15 @@ export default function ControlPanel() {
     setLngString(degAsLngStr(lng));
   }
 
-  const selectAyaOpt = (e: Event) => {
+  const selectListOption = (e: Event, func: Function) => {
     if (e.target instanceof HTMLSelectElement) {
-      setAyaKey(e.target.value);
+      func(e.target.value);
     }
   }
+
+  const selectAyaOpt = (e: Event) => selectListOption(e, setAyaKey);
+
+  const selectHsys = (e: Event) => selectListOption(e, setHsys);
 
   createEffect(() => {
     fetchGeo((data: any) => {
@@ -238,6 +245,7 @@ export default function ControlPanel() {
             <input type="number" class="minutes" value={offsetMins()} size="1" onChange={(e) => updateOffset(e, true)} step="1" min="0" max="59" />
           </div>
           <AyanamashaSelect value={ayaKey()} onSelect={(e: Event) => selectAyaOpt(e)} />
+          <OptionSelect name="hsys" options={houseSystems}  value={hsys()} onSelect={(e: Event) => selectHsys(e)} />
           <div class="field">
             <input id="toggle-sidereal" type="checkbox" name="apply_ayanamsha" checked={applyAya()} onChange={() => updateApplyAya()} />
             <label for="toggle-sidereal">Sidereal</label>

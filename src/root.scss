@@ -182,12 +182,22 @@ main dl.grid-2 {
 .top-info {
   .flex-grid {
     grid-template-columns: auto 10em;
-    @media (min-width: 60rem) {
+    @media (min-width: 64rem) {
       grid-template-columns: auto 10em auto 10em;
     }
 
-    @media (min-width: 80rem) {
+    @media (min-width: 90rem) {
       grid-template-columns: auto 10em auto 10em auto 10em;
+    }
+  }
+  dl.grid-2 {
+    dt, dd {
+      white-space: nowrap;
+    }
+  }
+  dl {
+    dd {
+      font-size: 0.8rem;
     }
   }
 }

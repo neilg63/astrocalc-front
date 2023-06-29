@@ -252,6 +252,10 @@ export class Variant {
       this.relationship.length > 2 && this.relationship.toLowerCase() !== "none"
     );
   }
+
+  get hasCharaKaraka(): boolean {
+    return this.charaKaraka > 0;
+  }
 }
 
 const SphutaKeys = [
@@ -402,6 +406,20 @@ export class Graha {
     return this.variants.length > 0;
   }
 
+  get isPlanet(): boolean {
+    return (
+      ["as", "ds", "su"].includes(this.key) === false && this.key.length === 2
+    );
+  }
+
+  get showLngSpeed(): boolean {
+    return this.lngSpeed !== 0 || this.isPlanet;
+  }
+
+  get showLatSpeed(): boolean {
+    return this.latSpeed !== 0 || this.isPlanet;
+  }
+
   get firstVariant(): Variant {
     if (this.hasVariants) {
       return this.variants[0];
@@ -506,9 +524,13 @@ export class PointSet {
       });
     }
   }
+
+  get hasMcAzi(): boolean {
+    return this.mcAzi !== 0;
+  }
 }
 
-class HouseSet {
+export class HouseSet {
   houses: number[] = [];
   system = "W";
 
@@ -542,6 +564,7 @@ export class AstroChart {
   transitions: TransitionSet[] = [];
   sphutas: SphutaSet[] = [];
   upagrahas: SphutaSet[] = [];
+  private ascendantVariants: Variant[] = [];
 
   constructor(inData: any = null, tz: any = null) {
     if (inData instanceof Object) {
@@ -556,12 +579,19 @@ export class AstroChart {
         variants,
         sphutas,
         upagrahas,
+        variantHouses,
       } = inData;
       if (house instanceof Object) {
         const { points, sets } = house;
         this.points = new PointSet(points);
-        if (sets instanceof Array) {
-          this.hsets = sets.map((hset) => new HouseSet(hset));
+        const hSets =
+          variantHouses instanceof Object &&
+          Object.keys(variantHouses).includes("values") &&
+          variantHouses.values instanceof Array
+            ? [{ ...sets[0], houses: variantHouses.values }]
+            : sets;
+        if (hSets instanceof Array) {
+          this.hsets = hSets.map((hset: any) => new HouseSet(hset));
         }
       }
       if (geo instanceof Object) {
@@ -630,6 +660,8 @@ export class AstroChart {
       const body = this.bodies.find((b) => b.key === key);
       if (body instanceof Graha) {
         body?.addVariant(inData);
+      } else if (key === "as") {
+        this.ascendantVariants.push(new Variant(inData));
       }
     }
   }
@@ -656,6 +688,28 @@ export class AstroChart {
     } else {
       return 0;
     }
+  }
+
+  get grahas(): Graha[] {
+    return [this.ascendant, ...this.bodies];
+  }
+
+  get ascendant(): Graha {
+    const graha = new Graha({
+      key: "as",
+      lng: this.points.ascendant,
+      lngSpeed: 0,
+      lat: 0,
+      latSpeed: 0,
+      azimuth: this.points.ascAzi,
+      altitude: 0,
+      rectAscension: this.points.ascRa,
+      declination: this.points.ascDec,
+    });
+    for (const variant of this.ascendantVariants) {
+      graha.addVariant(variant);
+    }
+    return graha;
   }
 
   getAyanamsha(keyRef: string | number): number {

@@ -1,5 +1,10 @@
 import { snakeToWords } from "./converters";
 
+export interface KeyName {
+  key: string;
+  name: string;
+}
+
 export interface KeyNameNum {
   key: string;
   name: string;
@@ -464,6 +469,13 @@ export const bodies: GrahaAttrSet[] = [
     name: "SouthNode",
     opposition: "-",
   },
+  {
+    astro_num: -1,
+    jyotish_num: -1,
+    key: "as",
+    name: "Ascendant",
+    opposition: "-",
+  },
 ];
 
 const matchByGrahaRef = (
@@ -500,31 +512,40 @@ export const matchNameByGrahaKey = (key: string): string => {
   return matchByGrahaKey(key).name;
 };
 
-export const houseSystems = {
-  A: "equal",
-  B: "Alcabitius",
-  C: "Campanus",
-  D: "equal (MC)",
-  E: "equal",
-  F: "Carter poli-equ.",
-  G: "Gauquelin sectors",
-  H: "horizon/azimut",
-  I: "Sunshine",
-  K: "Koch",
-  L: "Pullen SD",
-  M: "Morinus",
-  N: "equal/1=Aries",
-  O: "Porphyry",
-  Q: "Pullen SR",
-  R: "Regiomontanus",
-  S: "Sripati",
-  T: "Polich/Page",
-  U: "Krusinski-Pisa-Goelzer",
-  V: "equal/Vehlow",
-  W: "equal/ whole sign",
-  X: "axial rotation system/Meridian houses",
-  Y: "APC houses",
-  i: "Sunshine/alt.",
+export const houseSystems = [
+  { key: "W", name: "Whole sign equal" },
+  { key: "A", name: "Equal" },
+  { key: "B", name: "Alcabitius" },
+  { key: "C", name: "Campanus" },
+  // { key: "D", name: "equal (MC)" },
+  // { key: "E", name: "equal" },
+  // { key: "F", name: "Carter poli-equ." },
+  { key: "G", name: "Gauquelin sectors" },
+  { key: "H", name: "horizon/azimut" },
+  // { key: "I", name: "Sunshine" },
+  // { key: "J", name: "Sunshine/alt." },
+  { key: "K", name: "Koch" },
+  // { key: "L", name: "Pullen SD" },
+  { key: "M", name: "Morinus" },
+  // { key: "N", name: "Equal/1=Aries" },
+  { key: "O", name: "Porphyry" },
+  // { key: "Q", name: "Pullen SR" },
+  { key: "R", name: "Regiomontanus" },
+  // { key: "S", name: "Sripati" },
+  { key: "T", name: "Polich/Page" },
+  // { key: "U", name: "Krusinski-Pisa-Goelzer" },
+  // { key: "V", name: "equal/Vehlow" },
+  { key: "X", name: "Axial rotation / Meridian" },
+  // { key: "Y", name: "APC houses" },
+];
+
+export const matchByHouseKey = (key: string): string => {
+  const row = houseSystems.find((row) => row.key === key);
+  if (row instanceof Object) {
+    return row.name;
+  } else {
+    return key;
+  }
 };
 
 export const weekDayName = (num = 1, mode = "iso") => {
