@@ -10,9 +10,9 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
 
   const toTabGrid = () => {
     const rows = data.grahas.map(body => {
-      return [body.longitude(data.ayanamsha), body.lng, body.lngSpeed, body.lat, body.latSpeed, body.rectAscension, body.declination,body.azimuth, body.altitude].join("\t");
+      return [matchNameByGrahaKey(body.key), body.longitude(data.ayanamsha), body.lng, body.lngSpeed, body.lat, body.latSpeed, body.rectAscension, body.declination,body.azimuth, body.altitude].join("\t");
     })
-    const header = ['Sid. Longitude', 'Trop. Longitude', 'Lng. Speed', 'Latitude', 'Lat. peed', 'Right Asc.', 'Declination','Azimuth', 'Altitude']
+    const header = ['Name', 'Sid. Longitude', 'Trop. Longitude', 'Lng. Speed', 'Latitude', 'Lat. peed', 'Right Asc.', 'Declination','Azimuth', 'Altitude']
     return [header, ...rows].join("\n")
   }
 
