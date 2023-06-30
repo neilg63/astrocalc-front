@@ -1,14 +1,23 @@
 import { For, Show } from "solid-js";
-import { decPlaces4, degAsDms, degAsLatStr, degAsLngStr, julToDateOnly, julToISODate, julToLongDate, snakeToWords, subtractLng360, yesNo } from "~/api/converters";
-import { AstroChart, TransitionSet } from "~/api/models";
-import VariantSet from "./VariantSet";
-import IndianTimeGroup from "./IndianTimeGroup";
-import SphutaGroup from "./SphutaGroup";
-import UpaGroup from "./UpaGroup";
+import { degAsDms, julToISODate, julToLongDate } from "~/api/converters";
+import { TransitionSet } from "~/api/models";
 import { matchNameByGrahaKey } from "~/api/mappings";
 
 export default function TransitionTable({ transitions, tzOffset }: { transitions: TransitionSet[]; tzOffset: number }) {
   const toDateTime = (jd = 0): string => julToLongDate(jd, tzOffset);
+  const toISODateTime = (jd = 0): string => julToISODate(jd, tzOffset,true);
+  const toTabGrid = () => {
+    const rows = transitions.map(row => {
+      return [matchNameByGrahaKey(row.key), toISODateTime(row.rise), toISODateTime(row.mc), toISODateTime(row.set), toISODateTime(row.ic)].join("\t");
+    })
+    const header = ['Name', 'Set', 'Trop. Longitude', 'Lng. Speed', 'Latitude', 'Lat. peed', 'Right Asc.', 'Declination','Azimuth', 'Altitude']
+    return [header, ...rows].join("\n")
+  }
+
+  const copyGrid = () => {
+    const grid = toTabGrid();
+    navigator.clipboard.writeText(grid);
+  }
   return <table>
     <thead>
       <tr>
@@ -45,6 +54,9 @@ export default function TransitionTable({ transitions, tzOffset }: { transitions
           </td>
       </tr>}
       </For>
-      </tbody>
+    </tbody>
+    <tfoot>
+      <tr><th colspan={9}><button onClick={() => copyGrid()}>Copy table for spreadsheet</button></th></tr>
+    </tfoot>
   </table>
 }

@@ -20,7 +20,7 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
     const grid = toTabGrid();
     navigator.clipboard.writeText(grid);
   }
-  const footColSpan = singleVariantSetMode ? 13 : 8;
+  const footColSpan = singleVariantSetMode ? 14 : 9;
   return <table>
     <thead>
       <tr>
