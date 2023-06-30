@@ -196,8 +196,8 @@ export default function ControlPanel() {
     if (!init()) {
       const secsOffset = getGeoTzOffset();
       updateTimeOffset(secsOffset);
-      const cData = fromLocal("current-chart", 24 * 3600);
-      const geoData = fromLocal("geoname", 24 * 3600);
+      const cData = fromLocal("current-chart", 7 * 24 * 3600);
+      const geoData = fromLocal("geoname", 7 * 24 * 3600);
       const tzData = fromLocal("current-tz", 24 * 3600);
       
       let chartData = cData.valid ? cData.data : null;
@@ -230,7 +230,10 @@ export default function ControlPanel() {
         setDateString(ps[0]);
         setTimeString(ps[1]);
       }
-      setInit(true);
+
+      setTimeout(() => {
+        setInit(true)
+      }, 500)
     }
   })
 
@@ -239,7 +242,7 @@ export default function ControlPanel() {
       <fieldset class="top-controls grid top-grid" >
         <div class="date-time-bar flex flex-row">
           <input type="date" value={dateString()} size="12" onChange={(e) => updateDate(e)} />
-        
+          <input type="time" value={timeString()} size="12" onChange={(e) => updateTime(e)} />
           <div class="tz-offset-control">
             <input type="number" class="hours" value={offsetHrs()} size="1" onChange={(e) => updateOffset(e, false)} step="1" min="-15" max="15" />
             <input type="number" class="minutes" value={offsetMins()} size="1" onChange={(e) => updateOffset(e, true)} step="1" min="0" max="59" />
@@ -258,7 +261,6 @@ export default function ControlPanel() {
             </button>
         </div>
         <div class="location-bar flex flex-row">
-            <input type="time" value={timeString()} size="12" onChange={(e) => updateTime(e)} />
           <div class="place-name-wrapper flex column">
             <input type="text" list="place-names" value={placeString()} size="40" onKeyUp={(e) => searchPlace(e)} />
             <div class="suggestion-wrapper">
