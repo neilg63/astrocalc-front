@@ -11,6 +11,9 @@ import { fromLocal, toLocal } from "~/lib/localstore";
 import AyanamashaSelect from "./AyanamshaSelect";
 import OptionSelect from "./OptionSelect";
 import { houseSystems } from "~/api/mappings";
+import { Button, Checkbox, TextField } from "@suid/material";
+import DmsInput from "./DmsInput";
+import PlaceNameSelector from "./PlaceNameSelector";
 
 interface LocDt {
   dt: string;
@@ -26,8 +29,6 @@ export default function ControlPanel() {
   const [tz, setTz] = createSignal(new TimeZoneInfo());
   const [placeString, setPlaceString] = createSignal('');
   const [suggestions, setSuggestions] = createSignal([] as GeoName[]);
-  const [latString, setLatString] = createSignal(`00º 00' 00"`);
-  const [lngString, setLngString] = createSignal(`00º 00' 00"`);
   const [defLat, setDefLat] = createSignal(0);
   const [defLng, setDefLng] = createSignal(0);
   const [init, setInit] = createSignal(false);
@@ -71,16 +72,6 @@ export default function ControlPanel() {
   const opneChart = () => setShowData(true);
   const updateDate = (e: Event) => updateInputValue(e, setDateString, '\\d\\d\\d\\d-[012][0-9]-[0123][0-9]');
   const updateTime = (e: Event) => updateInputValue(e, setTimeString,'[012][0-9]:[0-5][0-9](:[0-5][0-9])?');
-  const updateLat = (e: Event) => {
-    updateInputValue(e, setLatString);
-    const deg = dmsStringToDec(latString());
-    setLat(deg)
-  }
-  const updateLng = (e: Event) => {
-    updateInputValue(e, setLngString);
-    const deg = dmsStringToDec(lngString());
-    setLng(deg);
-  }
   const updateOffset = (e: Event, minuteMode = false) => {
     let hrs = offsetHrs();
     let mins = offsetMins();
@@ -119,38 +110,13 @@ export default function ControlPanel() {
     })
   }
 
-  const searchPlace = (e: Event) => {
-    setSuggestions([]);
-    if (e.target instanceof HTMLInputElement) {
-      const { value } = e.target;
-      if (notEmptyString(value,2)) {
-        searchLocation(value).then(results => {  
-          if (results instanceof Array) {
-            const sugs = results.map(item => new GeoName(item));
-            setSuggestions(sugs);
-          }
-        })
-      }
-    }
-  }
-
-  const selectPlace = (e: Event) => {
-    if (e.target instanceof HTMLElement) {
-      const value = e.target.textContent;
-      if (notEmptyString(value)) {
-        const coords = e.target.getAttribute('data-coords');
-        if (typeof coords === 'string') {
-          const parts = coords.split(',').map(p => smartCastFloat(p));
-          if (parts.length > 1) {
-            const [lat, lng] = parts;
-            syncLatLng(lat, lng);
-            setPlaceString(value as string);
-            toLocal('geoname', { name: value, lat, lng });
-            setTimeout(updateGeoTz, 500);
-          }
-        }
-      }
-      setSuggestions([]);
+  const updatePlaceName = ({ name, hasGeo, lat, lng }: { name: string; hasGeo: boolean; lat: number; lng: number }) => {
+    if (hasGeo) {
+      console.log({name, lat, lng});
+      toLocal('geoname', { name, lat, lng });
+      setLng(lng);
+      setLat(lat);
+      setTimeout(updateGeoTz, 500);
     }
   }
 
@@ -165,8 +131,6 @@ export default function ControlPanel() {
   const syncLatLng = (lat: number, lng: number) => {
     setLat(lat);
     setLng(lng);
-    setLatString(degAsLatStr(lat));
-    setLngString(degAsLngStr(lng));
   }
 
   const selectListOption = (e: Event, func: Function) => {
@@ -179,20 +143,25 @@ export default function ControlPanel() {
 
   const selectHsys = (e: Event) => selectListOption(e, setHsys);
 
-  createEffect(() => {
+  const syncLocalGeo = (checkInitialised = false) => {
     fetchGeo((data: any) => {
       if (data instanceof Object) {
         const { latitude, longitude } = data;
         if (typeof latitude === "number") {
-          setDefLat(latitude);
-          setDefLng(longitude);
-          if (!init()) {
+          const proceed = !checkInitialised || (!init() && lat() === 0 && lng() === 0)
+          if (proceed) {
+            setDefLat(latitude);
+            setDefLng(longitude);
             syncLatLng(latitude, longitude);
-            toLocal("current-geo", new GeoLoc({lat: latitude, lng: longitude}));
+            toLocal("current-geo", new GeoLoc({ lat: latitude, lng: longitude }));
           }
         }
       }
     })
+  }
+
+  createEffect(() => {
+    syncLocalGeo(true);
     if (!init()) {
       const secsOffset = getGeoTzOffset();
       updateTimeOffset(secsOffset);
@@ -248,32 +217,24 @@ export default function ControlPanel() {
             <input type="number" class="minutes" value={offsetMins()} size="1" onChange={(e) => updateOffset(e, true)} step="1" min="0" max="59" />
           </div>
           <AyanamashaSelect value={ayaKey()} onSelect={(e: Event) => selectAyaOpt(e)} />
-          <OptionSelect name="hsys" options={houseSystems}  value={hsys()} onSelect={(e: Event) => selectHsys(e)} />
+          <OptionSelect name="hsys" label="House system" options={houseSystems}  value={hsys} setValue={selectHsys} />
           <div class="field">
-            <input id="toggle-sidereal" type="checkbox" name="apply_ayanamsha" checked={applyAya()} onChange={() => updateApplyAya()} />
+            <Checkbox id="toggle-sidereal" name="apply_ayanamsha" checked={applyAya()} onChange={() => updateApplyAya()} />
             <label for="toggle-sidereal">Sidereal</label>
           </div>
         </div>
         <div class="actions flex flex-column">
-          <button class="increment" onClick={() => updateGeoTz()}>Check time offset</button>  
-          <button class="increment" onClick={() => fetchChart()}>
+          <Button variant="outlined" onClick={() => updateGeoTz()}>Check time offset</Button>  
+          <Button variant="outlined" onClick={() => fetchChart()}>
             Calculate
-            </button>
+            </Button>
         </div>
         <div class="location-bar flex flex-row">
-          <div class="place-name-wrapper flex column">
-            <input type="text" list="place-names" value={placeString()} size="40" onKeyUp={(e) => searchPlace(e)} />
-            <div class="suggestion-wrapper">
-              <ul class="plain suggestions" id="place-name-list">
-                <For each={suggestions()}>
-                  {(item) => <li data-coords={item.coords} onClick={(e) => selectPlace(e)}>{item.placeName}</li>}
-                </For>
-              </ul>
-            </div>
+          <PlaceNameSelector value={placeString} onChange={updatePlaceName} label="Locality, region" />
+          <div class="coordinates">
+            <DmsInput label="Latitude" mode="lat" value={lat} changeValue={setLat} />
+            <DmsInput label="Longitude" mode="lng" value={lng} changeValue={setLng} />
           </div>
-
-          <input type="text" value={latString()} pattern="-?[0-9][0-9]?º?\s+[0-9][0-9]?'?\s+[0-9][0-9]?\s*(N|S)" size="16" onChange={(e) => updateLat(e)} />
-          <input type="text" value={lngString()} pattern="-?[0-9][0-9]?[0-9]?º?\s+[0-9][0-9]?'?\s+[0-9][0-9]?\s*(E|W)" size="16" onChange={(e) => updateLng(e)} />
         </div>
       </fieldset>
       <div class="status-row flex flex-row">

@@ -1,5 +1,5 @@
 import { For, Show } from "solid-js";
-import { decPlaces4, degAsDms, degAsLatStr, degAsLngStr, julToLongDate, secsToString, snakeToWords, subtractLng360, yesNo } from "~/api/converters";
+import { decPlaces, decPlaces4, degAsDms, degAsLatStr, degAsLngStr, julToLongDate, secsToString, snakeToWords, subtractLng360, yesNo } from "~/api/converters";
 import { AstroChart } from "~/api/models";
 import IndianTimeGroup from "./IndianTimeGroup";
 import SphutaGroup from "./SphutaGroup";
@@ -19,7 +19,9 @@ export default function ChartData({ data, applyAya }: {data: AstroChart, applyAy
         <dt>Local time</dt>
         <dd>{julToLongDate(data.jd, data.tzOffsetSeconds)} ({secsToString(data.tzOffsetSeconds)})</dd>
         <dt>UTC</dt>
-        <dd>{ julToLongDate(data.jd, 0) }</dd>
+        <dd>{julToLongDate(data.jd, 0)}</dd>
+        <dt>Julian day</dt>
+        <dd>{ decPlaces4(data.jd)}</dd>
         <dt>Ayanamsha</dt>
         <dd class="space-parts">
           <span>{snakeToWords(data.ayanamshaKey)}</span>
