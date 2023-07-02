@@ -70,14 +70,21 @@ export const fetchChartData = async (params: ParamSet): Promise<any> => {
   return await fetchContentAstro(method, params);
 };
 
-export const fetchTz = async (dt: string, loc: string): Promise<any> => {
-  const method = `timezone`;
+export const fetchTz = async (
+  dt: string,
+  loc: string,
+  addPlaceNames = false
+): Promise<any> => {
+  const method = addPlaceNames ? `geotime` : `timezone`;
   const params = {
     dt,
     loc,
   };
   return await fetchContentGeo(method, params);
 };
+
+export const fetchGeoTz = async (dt: string, loc: string): Promise<any> =>
+  fetchTz(dt, loc, true);
 
 export const searchLocation = async (place: string, cc = ""): Promise<any> => {
   const method = `lookup`;

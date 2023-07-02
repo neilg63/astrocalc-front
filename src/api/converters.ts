@@ -8,7 +8,12 @@ import differenceInCalendarYears from "date-fns/differenceInCalendarYears";
 import { formatToTimeZone } from "date-fns-timezone";
 import addSeconds from "date-fns/addSeconds";
 import formatDistanceToNow from "date-fns/formatDistanceToNow";
-import { validDateTimeString, isNumeric, notEmptyString } from "./utils";
+import {
+  validDateTimeString,
+  isNumeric,
+  notEmptyString,
+  zeroPad2,
+} from "./utils";
 import {
   dateStringToJulianDate,
   julToDateParts,
@@ -200,6 +205,34 @@ export const dmsStringToDec = (strDeg: string): number => {
   return num;
 };
 
+export const dmsStringToNumParts = (
+  value = "",
+  mode = "lat"
+): { deg: number; mins: number; secs: number; dir: string } => {
+  const compassOptions = mode === "lat" ? `(N|S)` : `(E|W)`;
+  const dirRgx = new RegExp("^[^a-z]*?" + compassOptions + ".*?$", "i");
+  const endPart = value.replace(dirRgx, "$1");
+  const dir = notEmptyString(endPart) ? endPart : "";
+  const parts = value.split(/[^0-9\.]+/);
+  const numParts = parts.length;
+  let deg = 0;
+  let mins = 0;
+  let secs = 0;
+  if (numParts > 0) {
+    deg = smartCastInt(parts[0]);
+    mins = numParts > 1 ? smartCastInt(parts[1]) : 0;
+    secs = numParts > 2 ? smartCastInt(parts[2]) : 0;
+  }
+  return { deg, mins, secs, dir };
+};
+
+export const dmsUnitsToString = (deg = 0, mins = 0, secs = 0, dir = "") => {
+  const minStr = zeroPad2(mins);
+  const secStr = zeroPad2(secs);
+  const newValue = `${deg}º ${minStr}' ${secStr}" ${dir}`;
+  return newValue.trim();
+};
+
 export const offsetDate = (datetime: Date, offset = 0) =>
   addSeconds(datetime, offset);
 
@@ -304,6 +337,14 @@ export const decPlaces = (flDeg: any, places = 3): string => {
 
 export const decPlaces4 = (flDeg: any): string => {
   return decPlaces(flDeg, 4);
+};
+
+export const decPlaces5 = (flDeg: any): string => {
+  return decPlaces(flDeg, 5);
+};
+
+export const decPlaces6 = (flDeg: any): string => {
+  return decPlaces(flDeg, 6);
 };
 
 export const percDec = (flVal: any, places = 3) =>

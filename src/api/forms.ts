@@ -2,7 +2,6 @@ import { notEmptyString } from "./utils";
 
 const matchesPattern = (str = "", pattern = "", mode = "i"): boolean => {
   const rgx = new RegExp("^" + pattern + "$", mode);
-  console.log(rgx, str);
   return rgx.test(str);
 };
 

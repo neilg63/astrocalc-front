@@ -153,35 +153,59 @@ export class TransitionSet {
   min = 0;
   max = 0;
 
-  constructor(key = "", items: KeyNumValue[] = []) {
-    this.key = key;
-    for (const row of items) {
-      switch (row.key) {
-        case "prev_set":
-          this.prevSet = row.value;
-          break;
-        case "rise":
-          this.rise = row.value;
-          break;
-        case "ic":
-          this.ic = row.value;
-          break;
-        case "set":
-          this.set = row.value;
-          break;
-        case "mc":
-          this.mc = row.value;
-          break;
-        case "next_rise":
-          this.nextRise = row.value;
-          break;
-        case "min":
-          this.min = row.value;
-          break;
-        case "max":
-          this.max = row.value;
-          break;
+  constructor(keyRef: any = null, items: KeyNumValue[] = []) {
+    if (typeof keyRef === "string") {
+      this.key = keyRef;
+      for (const row of items) {
+        switch (row.key) {
+          case "prev_set":
+          case "prevSet":
+            this.prevSet = row.value;
+            break;
+          case "rise":
+            this.rise = row.value;
+            break;
+          case "ic":
+            this.ic = row.value;
+            break;
+          case "set":
+            this.set = row.value;
+            break;
+          case "mc":
+            this.mc = row.value;
+            break;
+          case "next_rise":
+          case "nextRise":
+            this.nextRise = row.value;
+            break;
+          case "min":
+            this.min = row.value;
+            break;
+          case "max":
+            this.max = row.value;
+            break;
+        }
       }
+    } else if (keyRef instanceof Object) {
+      Object.entries(keyRef).forEach(([key, value]) => {
+        const dataType = typeof value;
+        if (dataType === "string" && key === "key") {
+          this.key = value as string;
+        } else if (dataType === "number") {
+          switch (key) {
+            case "prevSet":
+            case "rise":
+            case "mc":
+            case "set":
+            case "ic":
+            case "nextRise":
+            case "min":
+            case "max":
+              this[key] = value as number;
+              break;
+          }
+        }
+      });
     }
   }
 
@@ -198,10 +222,10 @@ export class TransitionSet {
   }
 
   get hasNextRise(): boolean {
-    return this.prevSet > 0;
+    return this.nextRise > 0;
   }
   get hasMinMax(): boolean {
-    return this.min !== 0 && this.max !== 0;
+    return this.min !== 0 || this.max !== 0;
   }
 }
 
@@ -388,6 +412,11 @@ export class Graha {
               break;
           }
         }
+        if (key === "variants" && val instanceof Array) {
+          val.forEach((row) => {
+            this.addVariant(row);
+          });
+        }
       });
     }
   }
@@ -410,6 +439,10 @@ export class Graha {
     return (
       ["as", "ds", "su"].includes(this.key) === false && this.key.length === 2
     );
+  }
+
+  get showLat(): boolean {
+    return this.lat !== 0 || this.isPlanet;
   }
 
   get showLngSpeed(): boolean {
@@ -556,6 +589,8 @@ export class AstroChart {
 
   geo = new GeoLoc();
 
+  placeName = "";
+
   points: PointSet = new PointSet(); // core astronomical points
 
   bodies: Graha[] = []; // array of celestial bodies
@@ -566,12 +601,12 @@ export class AstroChart {
   upagrahas: SphutaSet[] = [];
   private ascendantVariants: Variant[] = [];
 
-  constructor(inData: any = null, tz: any = null) {
+  constructor(inData: any = null, tz: any = null, placeName = "") {
     if (inData instanceof Object) {
+      const keys = Object.keys(inData);
+      const restoreMode = keys.includes("hsets") && keys.includes("placeName");
       const {
-        house,
         bodies,
-        date,
         geo,
         indianTime,
         ayanamshas,
@@ -579,29 +614,57 @@ export class AstroChart {
         variants,
         sphutas,
         upagrahas,
-        variantHouses,
       } = inData;
-      if (house instanceof Object) {
-        const { points, sets } = house;
-        this.points = new PointSet(points);
-        const hSets =
-          variantHouses instanceof Object &&
-          Object.keys(variantHouses).includes("values") &&
-          variantHouses.values instanceof Array
-            ? [{ ...sets[0], houses: variantHouses.values }]
-            : sets;
-        if (hSets instanceof Array) {
-          this.hsets = hSets.map((hset: any) => new HouseSet(hset));
+      if (restoreMode) {
+        const { hsets, points, placeName, jd, tz } = inData;
+        if (hsets instanceof Array) {
+          this.hsets = hsets.map((hs) => new HouseSet(hs));
         }
-      }
-      if (geo instanceof Object) {
-        this.geo = new GeoLoc(geo);
-      }
-      if (date instanceof Object) {
-        const { jd } = date;
-        if (typeof jd === "number") {
+        if (points instanceof Object) {
+          this.points = new PointSet(points);
+        }
+        if (notEmptyString(placeName)) {
+          this.placeName = placeName;
+        }
+        if (jd > 0) {
           this.jd = jd;
         }
+        if (tz instanceof Object) {
+          this.tz = new TimeZoneInfo(tz);
+        }
+      } else {
+        const { house, date, variantHouses } = inData;
+        if (house instanceof Object) {
+          const { points, sets } = house;
+          this.points = new PointSet(points);
+          const hSets =
+            variantHouses instanceof Object &&
+            Object.keys(variantHouses).includes("values") &&
+            variantHouses.values instanceof Array
+              ? [{ ...sets[0], houses: variantHouses.values }]
+              : sets;
+          if (hSets instanceof Array) {
+            this.hsets = hSets.map((hset: any) => new HouseSet(hset));
+          }
+        }
+        if (date instanceof Object) {
+          const { jd } = date;
+          if (typeof jd === "number") {
+            this.jd = jd;
+          }
+        }
+        if (tz instanceof Object) {
+          this.tz = new TimeZoneInfo(tz);
+        } else if (typeof tz === "number") {
+          this.tz = new TimeZoneInfo({ gmtOffset: tz });
+        }
+        if (notEmptyString(placeName)) {
+          this.placeName = placeName;
+        }
+      }
+
+      if (geo instanceof Object) {
+        this.geo = new GeoLoc(geo);
       }
       if (bodies instanceof Array) {
         this.bodies = bodies.map((b) => new Graha(b));
@@ -617,9 +680,13 @@ export class AstroChart {
       if (transitions instanceof Array) {
         for (const row of transitions) {
           if (row instanceof Object) {
-            const { key, items } = row;
-            if (items instanceof Array) {
-              this.transitions.push(new TransitionSet(key, items));
+            if (restoreMode) {
+              this.transitions.push(new TransitionSet(row));
+            } else {
+              const { key, items } = row;
+              if (items instanceof Array) {
+                this.transitions.push(new TransitionSet(key, items));
+              }
             }
           }
         }
@@ -645,12 +712,6 @@ export class AstroChart {
           }
         }
       }
-    }
-
-    if (tz instanceof Object) {
-      this.tz = new TimeZoneInfo(tz);
-    } else if (typeof tz === "number") {
-      this.tz = new TimeZoneInfo({ gmtOffset: tz });
     }
   }
 
@@ -710,6 +771,10 @@ export class AstroChart {
       graha.addVariant(variant);
     }
     return graha;
+  }
+
+  get hasPlaceName(): boolean {
+    return notEmptyString(this.placeName);
   }
 
   getAyanamsha(keyRef: string | number): number {

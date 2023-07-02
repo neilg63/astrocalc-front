@@ -549,7 +549,7 @@ export const matchByHouseKey = (key: string): string => {
 };
 
 export const weekDayName = (num = 1, mode = "iso") => {
-  const isoNum = mode === "sun" ? (num === 7 ? 1 : num + 1) : num;
+  const isoNum = mode === "sun" ? (num === 1 ? 7 : num - 1) : num;
   switch (isoNum) {
     case 1:
       return "Monday";

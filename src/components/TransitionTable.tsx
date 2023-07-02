@@ -37,14 +37,14 @@ export default function TransitionTable({ transitions, tzOffset }: { transitions
         {(item) => <tr class={item.key}>
           <td class="key">{ matchNameByGrahaKey(item.key) }</td>
           <td class="prev-set">
-            <Show when={item.hasNextRise}>{toDateTime(item.prevSet)}</Show>
+            <Show when={item.hasPrevSet}>{toDateTime(item.prevSet)}</Show>
           </td>
           <td class="rise">{toDateTime(item.rise)}</td>
           <td class="mc">{toDateTime(item.mc)}</td>
           <td class="set">{toDateTime(item.set)}</td>
           <td class="ic">{toDateTime(item.ic)}</td>
           <td class="next-rise">
-            <Show when={item.hasNextRise}>{toDateTime(item.set)}</Show>
+            <Show when={item.hasNextRise}>{toDateTime(item.nextRise)}</Show>
           </td>
           <td class="numeric min">
             <Show when={item.hasMinMax}>{degAsDms(item.min)}</Show>

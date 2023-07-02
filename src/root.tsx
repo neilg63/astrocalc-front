@@ -26,7 +26,11 @@ export default function Root() {
         <Link
       href="https://fonts.googleapis.com/css?family=Roboto:300,400,500"
       rel="stylesheet"
-    />
+        />
+        <Link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      />
       </Head>
       <Body>
         <Suspense>

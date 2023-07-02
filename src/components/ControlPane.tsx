@@ -1,19 +1,21 @@
 import { For, Show, createEffect, createSignal } from "solid-js";
-import { fetchChartData, fetchTz, searchLocation } from "~/api/fetch";
+import { fetchChartData, fetchTz } from "~/api/fetch";
 import { formatDate, notEmptyString, yearsAgoDateString } from "~/api/utils";
 import { updateInputValue } from "~/api/forms";
-import { decPlaces4, degAsLatStr, degAsLngStr, dmsStringToDec, hrsMinsToString, smartCastFloat, smartCastInt } from "~/api/converters";
+import { decPlaces4, degAsLatStr, degAsLngStr, hrsMinsToString, smartCastInt } from "~/api/converters";
 import { fetchGeo, getGeoTzOffset } from "~/api/geoloc-utils";
 import { AstroChart, GeoLoc, GeoName, TimeZoneInfo, latLngToLocString } from "~/api/models";
-import { dateStringToJulianDate, julToDateParts, localDateStringToJulianDate } from "~/api/julian-date";
+import { currentJulianDate, dateStringToJulianDate, julToDateParts, localDateStringToJulianDate } from "~/api/julian-date";
 import ChartData from "./ChartaData";
 import { fromLocal, toLocal } from "~/lib/localstore";
 import AyanamashaSelect from "./AyanamshaSelect";
 import OptionSelect from "./OptionSelect";
 import { houseSystems } from "~/api/mappings";
-import { Button, Checkbox, TextField } from "@suid/material";
+import { Button, Checkbox, Icon, IconButton } from "@suid/material";
 import DmsInput from "./DmsInput";
 import PlaceNameSelector from "./PlaceNameSelector";
+import Tooltip from "./Tooltip";
+
 
 interface LocDt {
   dt: string;
@@ -28,7 +30,6 @@ export default function ControlPanel() {
   const [offsetMins, setOffsetMins] = createSignal(0);
   const [tz, setTz] = createSignal(new TimeZoneInfo());
   const [placeString, setPlaceString] = createSignal('');
-  const [suggestions, setSuggestions] = createSignal([] as GeoName[]);
   const [defLat, setDefLat] = createSignal(0);
   const [defLng, setDefLng] = createSignal(0);
   const [init, setInit] = createSignal(false);
@@ -61,11 +62,11 @@ export default function ControlPanel() {
     setShowData(false);
     fetchChartData({ ct: 1, jd, loc, it: 1, aya: ayaKey(), upa: 1, jyo: 1, hsys: hsys() }).then((data: any) => {
       if (data instanceof Object && data.date.jd > 0) {
-        setChart( new AstroChart(data, tz()));
-        const str = JSON.stringify(data);
+        const chart = new AstroChart(data, tz(), placeString());
+        setChart(chart);
         // setJson(str)
         setShowData(true);
-        toLocal("current-chart", data);
+        toLocal("current-chart", chart);
       }
     });
   }
@@ -97,14 +98,27 @@ export default function ControlPanel() {
     setTzOffset(secsOffset);
   }
 
-  const updateGeoTz = () => {
+  const updateGeoTz = (addPlaceNames = false) => {
     const { loc, dt } = extractDtLoc();
-    fetchTz(dt, loc).then((tz) => {
-      if (tz instanceof Object) {
+    const addPn = addPlaceNames === true;
+    fetchTz(dt, loc, addPn).then((data) => {
+      if (data instanceof Object) {
+        const keys = Object.keys(data);
+        const tz = (keys.includes("time") && data.time instanceof Object) ? data.time : data;
         if (typeof tz.gmtOffset === "number") {
           updateTimeOffset(tz.gmtOffset);
           setTz(new TimeZoneInfo(tz));
           toLocal("current-tz", tz);
+        }
+        if (addPn && keys.includes("placenames")) {
+          if (data.placenames instanceof Array) {
+            const numPns = data.placenames.length;
+            const lastPn = data.placenames[numPns - 1];
+            if (lastPn instanceof Object && notEmptyString(lastPn.name)) {
+              const plStr = `${lastPn.name}, ${lastPn.adminName} (${lastPn.countryCode})`;
+              setPlaceString(plStr);
+            }
+          }
         }
       }
     })
@@ -112,7 +126,6 @@ export default function ControlPanel() {
 
   const updatePlaceName = ({ name, hasGeo, lat, lng }: { name: string; hasGeo: boolean; lat: number; lng: number }) => {
     if (hasGeo) {
-      console.log({name, lat, lng});
       toLocal('geoname', { name, lat, lng });
       setLng(lng);
       setLat(lat);
@@ -141,7 +154,7 @@ export default function ControlPanel() {
 
   const selectAyaOpt = (e: Event) => selectListOption(e, setAyaKey);
 
-  const selectHsys = (e: Event) => selectListOption(e, setHsys);
+  // const selectHsys = (e: Event) => selectListOption(e, setHsys);
 
   const syncLocalGeo = (checkInitialised = false) => {
     fetchGeo((data: any) => {
@@ -149,15 +162,40 @@ export default function ControlPanel() {
         const { latitude, longitude } = data;
         if (typeof latitude === "number") {
           const proceed = !checkInitialised || (!init() && lat() === 0 && lng() === 0)
+          setDefLat(latitude);
+          setDefLng(longitude);
           if (proceed) {
-            setDefLat(latitude);
-            setDefLng(longitude);
             syncLatLng(latitude, longitude);
             toLocal("current-geo", new GeoLoc({ lat: latitude, lng: longitude }));
           }
         }
       }
     })
+  }
+
+  const resetGeo = () => {
+    syncLocalGeo(false);
+    setTimeout(() => { 
+      updateGeoTz(true);
+    }, 375);
+  }
+
+  const resetTime = () => {
+    const jdObj = currentJulianDate();
+    const parts = jdObj.toISOSimple().split("T");
+    setDateString(parts[0]);
+    setTimeString(parts[1]);
+    setTimeout(() => {
+      updateGeoTz(false)
+    }, 250);
+  }
+
+  const geoResetLabel = (lat: number, lng: number):string => {
+    const lbls = [`Reset to your current location`];
+    if (lat !== 0 && lng !== 0 && lng !== undefined) {
+      lbls.push([degAsLatStr(lat), degAsLngStr(lng)].join(', '))
+    }
+    return lbls.join(": ");
   }
 
   createEffect(() => {
@@ -198,10 +236,23 @@ export default function ControlPanel() {
         const ps = dateObj.toISOSimple().split('T');
         setDateString(ps[0]);
         setTimeString(ps[1]);
+        if (chart.hasPlaceName) {
+          setPlaceString(chart.placeName);
+        }
       }
 
       setTimeout(() => {
         setInit(true)
+        if (defLng() === 0 && defLat() === 0) {
+          const cGeoData = fromLocal("current-geo");
+          if (cGeoData.data instanceof Object) {
+            const { lat, lng } = cGeoData.data;
+            if (typeof lat === "number") {
+              setDefLat(lat);
+              setDefLng(lng);
+            }
+          }
+        }
       }, 500)
     }
   })
@@ -216,8 +267,13 @@ export default function ControlPanel() {
             <input type="number" class="hours" value={offsetHrs()} size="1" onChange={(e) => updateOffset(e, false)} step="1" min="-15" max="15" />
             <input type="number" class="minutes" value={offsetMins()} size="1" onChange={(e) => updateOffset(e, true)} step="1" min="0" max="59" />
           </div>
+          <Tooltip label="Set to current date and time">
+            <IconButton aria-label="set-to-current" color="primary" onClick={resetTime}>
+            <Icon>today</Icon>
+          </IconButton>
+          </Tooltip>
           <AyanamashaSelect value={ayaKey()} onSelect={(e: Event) => selectAyaOpt(e)} />
-          <OptionSelect name="hsys" label="House system" options={houseSystems}  value={hsys} setValue={selectHsys} />
+          <OptionSelect name="hsys" label="House system" options={houseSystems}  value={hsys} setValue={setHsys} />
           <div class="field">
             <Checkbox id="toggle-sidereal" name="apply_ayanamsha" checked={applyAya()} onChange={() => updateApplyAya()} />
             <label for="toggle-sidereal">Sidereal</label>
@@ -235,6 +291,11 @@ export default function ControlPanel() {
             <DmsInput label="Latitude" mode="lat" value={lat} changeValue={setLat} />
             <DmsInput label="Longitude" mode="lng" value={lng} changeValue={setLng} />
           </div>
+           <Tooltip label={geoResetLabel(defLat(), defLng())}>
+          <IconButton aria-label="set-to-current" color="primary" onClick={resetGeo}>
+            <Icon>my_location</Icon>
+            </IconButton>
+          </Tooltip>
         </div>
       </fieldset>
       <div class="status-row flex flex-row">
@@ -250,7 +311,7 @@ export default function ControlPanel() {
         </h4>
       </div>
       <div class="results-pane">
-        <Show when={showData()}><ChartData data={chart()} applyAya={applyAya() } /></Show>
+        <Show when={showData()}><ChartData data={chart()} applyAya={applyAya()} /></Show>
       </div>
     </>
   );
