@@ -130,6 +130,7 @@ export default function ControlPanel() {
       setLng(lng);
       setLat(lat);
       setTimeout(updateGeoTz, 500);
+      setPlaceString(name);
     }
   }
 
@@ -228,7 +229,7 @@ export default function ControlPanel() {
         }
       }
       if (hasData) {
-        const chart = new AstroChart(chartData, tz())
+        const chart = new AstroChart(chartData);
         setChart(chart);
         syncLatLng(chart.geo.lat, chart.geo.lng);
         setTimeout(opneChart, 500);

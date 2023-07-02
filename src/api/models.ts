@@ -601,7 +601,7 @@ export class AstroChart {
   upagrahas: SphutaSet[] = [];
   private ascendantVariants: Variant[] = [];
 
-  constructor(inData: any = null, tz: any = null, placeName = "") {
+  constructor(inData: any = null, tz: any = null, placeNameString = "") {
     if (inData instanceof Object) {
       const keys = Object.keys(inData);
       const restoreMode = keys.includes("hsets") && keys.includes("placeName");
@@ -658,8 +658,8 @@ export class AstroChart {
         } else if (typeof tz === "number") {
           this.tz = new TimeZoneInfo({ gmtOffset: tz });
         }
-        if (notEmptyString(placeName)) {
-          this.placeName = placeName;
+        if (notEmptyString(placeNameString)) {
+          this.placeName = placeNameString;
         }
       }
 
