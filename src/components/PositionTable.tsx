@@ -1,7 +1,9 @@
 import { For, Show } from "solid-js";
-import { camelToTitle, decPlaces4, decPlaces6, degAsDms } from "~/api/converters";
+import { camelToTitle, decPlaces6, degAsDms, standardDecHint, tropicalDecHint } from "~/api/converters";
 import { matchNameByGrahaKey } from "~/api/mappings";
 import { AstroChart } from "~/api/models";
+import IconTrigger from "./IconTrigger";
+import Tooltip from "./Tooltip";
 
 export default function PositionTable({ data, applyAya }: {data: AstroChart, applyAya: boolean}) {
   const ayaOffset = applyAya ? data.ayanamsha : 0;
@@ -48,14 +50,30 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
     <For each={data.grahas}>
         {(item) => <tr class={item.key}>
           <td class="key">{ matchNameByGrahaKey(item.key) }</td>
-          <td class="numeric lng sid-based" title={ decPlaces6(item.lng)}>{degAsDms(item.longitude(ayaOffset))}</td>
-          <td class="numeric lng-speed"><Show when={ item.showLngSpeed}>{decPlaces4(item.lngSpeed)}</Show></td>
-          <td class="numeric lat"><Show when={item.showLat}>{degAsDms(item.lat)}</Show></td>
+          <td class="numeric lng sid-based" >
+            <Tooltip label={tropicalDecHint(item.lng)}>
+              {degAsDms(item.longitude(ayaOffset))}
+            </Tooltip>
+          </td>
+          <td class="numeric lng-speed"><Show when={item.showLngSpeed}>
+            {decPlaces6(item.lngSpeed)}
+          </Show></td>
+          <td class="numeric lat"><Show when={item.showLat}>
+            <Tooltip label={standardDecHint(item.lat)}>{degAsDms(item.lat)}</Tooltip>
+          </Show></td>
           <td class="numeric lat-speed"><Show when={item.showLatSpeed}>{decPlaces6(item.latSpeed)}</Show></td>
-          <td class="numeric ras">{degAsDms(item.rectAscension)}</td>
-          <td class="numeric dec">{degAsDms(item.declination)}</td>
-          <td class="numeric azi">{degAsDms(item.azimuth)}</td>
-          <td class="numeric alt">{degAsDms(item.altitude)}</td>
+          <td class="numeric ras">
+            <Tooltip label={standardDecHint(item.rectAscension)}>{degAsDms(item.rectAscension)}</Tooltip>
+          </td>
+          <td class="numeric dec">
+              <Tooltip label={standardDecHint(item.declination)}>{degAsDms(item.declination)}</Tooltip>
+          </td>
+          <td class="numeric azi">
+            <Tooltip label={standardDecHint(item.azimuth)}>{degAsDms(item.azimuth)}</Tooltip>
+          </td>
+          <td class="numeric alt">
+            <Tooltip label={standardDecHint(item.altitude)}>{degAsDms(item.altitude)}</Tooltip>
+          </td>
           <Show when={singleVariantSetMode}>
             <td class="numeric sign sid-based">{item.firstVariant.sign}</td>
             <td class="numeric house sid-based">
@@ -73,7 +91,9 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
       </For>
     </tbody>
     <tfoot>
-      <tr><th colspan={footColSpan}><button onClick={() => copyGrid()}>Copy table for spreadsheet</button></th></tr>
+      <tr><th colspan={footColSpan}>
+        <IconTrigger label="Copy data grid compatible with spreadsheets" color="info" onClick={() => copyGrid()} icon="content_copy" />
+      </th></tr>
     </tfoot>
   </table>
 

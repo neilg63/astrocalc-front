@@ -1,7 +1,9 @@
 import { For, Show } from "solid-js";
-import { degAsDms, julToISODate, julToLongDate } from "~/api/converters";
+import { degAsDms, julToISODate, julToLongDate, standardDecHint } from "~/api/converters";
 import { TransitionSet } from "~/api/models";
 import { matchNameByGrahaKey } from "~/api/mappings";
+import IconTrigger from "./IconTrigger";
+import Tooltip from "./Tooltip";
 
 export default function TransitionTable({ transitions, tzOffset }: { transitions: TransitionSet[]; tzOffset: number }) {
   const toDateTime = (jd = 0): string => julToLongDate(jd, tzOffset);
@@ -47,16 +49,24 @@ export default function TransitionTable({ transitions, tzOffset }: { transitions
             <Show when={item.hasNextRise}>{toDateTime(item.nextRise)}</Show>
           </td>
           <td class="numeric min">
-            <Show when={item.hasMinMax}>{degAsDms(item.min)}</Show>
+            <Show when={item.hasMinMax}>
+              <Tooltip label={standardDecHint(item.min) }>
+                {degAsDms(item.min)}
+              </Tooltip>
+            </Show>
             </td>
           <td class="numeric max">
-            <Show when={item.hasMinMax}>{degAsDms(item.max)}</Show>
+            <Show when={item.hasMinMax}>
+              <Tooltip label={standardDecHint(item.max)}>{degAsDms(item.max)}</Tooltip>
+            </Show>
           </td>
       </tr>}
       </For>
     </tbody>
     <tfoot>
-      <tr><th colspan={9}><button onClick={() => copyGrid()}>Copy table for spreadsheet</button></th></tr>
+      <tr><th colspan={9}>
+        <IconTrigger label="Copy data grid compatible with spreadsheets" color="info" onClick={() => copyGrid()} icon="content_copy" />
+      </th></tr>
     </tfoot>
   </table>
 }

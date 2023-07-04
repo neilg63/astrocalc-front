@@ -1,4 +1,8 @@
-# SolidStart
+# AstroCalc UI
+
+This is a frontend UI for [AstroCalc](https://github.com/neilg63/astro-calc), an astrological calculation server built with Rust and Swiss Ephemeris.
+
+## SolidStart
 
 Everything you need to build a Solid project, powered by [`solid-start`](https://start.solidjs.com);
 

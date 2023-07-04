@@ -347,6 +347,18 @@ export const decPlaces6 = (flDeg: any): string => {
   return decPlaces(flDeg, 6);
 };
 
+export const degDecHint = (deg: number, prefix: string): string => {
+  return `${prefix}: ${decPlaces6(deg)}`;
+};
+
+export const tropicalDecHint = (deg: number): string => {
+  return degDecHint(deg, "Tropical value");
+};
+
+export const standardDecHint = (deg: number): string => {
+  return degDecHint(deg, "Decimal value");
+};
+
 export const percDec = (flVal: any, places = 3) =>
   decPlaces(flVal, places) + "%";
 

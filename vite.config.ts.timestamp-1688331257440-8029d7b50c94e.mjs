@@ -1,0 +1,18 @@
+// vite.config.ts
+import { defineConfig } from "file:///Users/neil/apps/findingyou/acfront/node_modules/vite/dist/node/index.js";
+import unocssPlugin from "file:///Users/neil/apps/findingyou/acfront/node_modules/unocss/dist/vite.mjs";
+import solid from "file:///Users/neil/apps/findingyou/acfront/node_modules/solid-start/vite/plugin.js";
+import suidPlugin from "file:///Users/neil/apps/findingyou/acfront/node_modules/@suid/vite-plugin/index.mjs";
+var vite_config_default = defineConfig({
+  plugins: [unocssPlugin(), suidPlugin(), solid()],
+  server: {
+    port: 4001
+  },
+  build: {
+    target: "esnext"
+  }
+});
+export {
+  vite_config_default as default
+};
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsidml0ZS5jb25maWcudHMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImNvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9kaXJuYW1lID0gXCIvVXNlcnMvbmVpbC9hcHBzL2ZpbmRpbmd5b3UvYWNmcm9udFwiO2NvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9maWxlbmFtZSA9IFwiL1VzZXJzL25laWwvYXBwcy9maW5kaW5neW91L2FjZnJvbnQvdml0ZS5jb25maWcudHNcIjtjb25zdCBfX3ZpdGVfaW5qZWN0ZWRfb3JpZ2luYWxfaW1wb3J0X21ldGFfdXJsID0gXCJmaWxlOi8vL1VzZXJzL25laWwvYXBwcy9maW5kaW5neW91L2FjZnJvbnQvdml0ZS5jb25maWcudHNcIjtpbXBvcnQgeyBkZWZpbmVDb25maWcgfSBmcm9tIFwidml0ZVwiO1xuaW1wb3J0IHVub2Nzc1BsdWdpbiBmcm9tIFwidW5vY3NzL3ZpdGVcIjtcbmltcG9ydCBzb2xpZCBmcm9tIFwic29saWQtc3RhcnQvdml0ZVwiO1xuaW1wb3J0IHN1aWRQbHVnaW4gZnJvbSBcIkBzdWlkL3ZpdGUtcGx1Z2luXCI7XG5cbmV4cG9ydCBkZWZhdWx0IGRlZmluZUNvbmZpZyh7XG4gIHBsdWdpbnM6IFt1bm9jc3NQbHVnaW4oKSwgc3VpZFBsdWdpbigpLCBzb2xpZCgpXSxcbiAgc2VydmVyOiB7XG4gICAgcG9ydDogNDAwMSxcbiAgfSxcbiAgYnVpbGQ6IHtcbiAgICB0YXJnZXQ6IFwiZXNuZXh0XCIsXG4gIH0sXG59KTtcbiJdLAogICJtYXBwaW5ncyI6ICI7QUFBMlIsU0FBUyxvQkFBb0I7QUFDeFQsT0FBTyxrQkFBa0I7QUFDekIsT0FBTyxXQUFXO0FBQ2xCLE9BQU8sZ0JBQWdCO0FBRXZCLElBQU8sc0JBQVEsYUFBYTtBQUFBLEVBQzFCLFNBQVMsQ0FBQyxhQUFhLEdBQUcsV0FBVyxHQUFHLE1BQU0sQ0FBQztBQUFBLEVBQy9DLFFBQVE7QUFBQSxJQUNOLE1BQU07QUFBQSxFQUNSO0FBQUEsRUFDQSxPQUFPO0FBQUEsSUFDTCxRQUFRO0FBQUEsRUFDVjtBQUNGLENBQUM7IiwKICAibmFtZXMiOiBbXQp9Cg==
