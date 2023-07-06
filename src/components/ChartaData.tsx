@@ -69,12 +69,12 @@ export default function ChartData({ data, applyAya }: {data: AstroChart, applyAy
     <div class="extra-data-row flex flex-row">
       <Show when={data.hasUpagrahas}>
         <For each={data.upagrahas}>
-        {(item) => <UpaGroup data={item} />}
+        {(item) => <UpaGroup data={item} ayanamashaValue={data.ayanamsha} />}
       </For>
       </Show>
       <Show when={data.hasSphutas}>
         <For each={data.sphutas}>
-          {(item) => <SphutaGroup data={item} />}
+          {(item) => <SphutaGroup data={item} ayanamashaValue={data.ayanamsha} />}
         </For>
       </Show>
       <Show when={data.hsets.length > 0}>

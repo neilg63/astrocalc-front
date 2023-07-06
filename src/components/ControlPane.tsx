@@ -2,7 +2,7 @@ import { For, Show, createEffect, createSignal } from "solid-js";
 import { fetchChartData, fetchTz } from "~/api/fetch";
 import { formatDate, notEmptyString, yearsAgoDateString } from "~/api/utils";
 import { updateInputValue } from "~/api/forms";
-import { decPlaces4, degAsLatStr, degAsLngStr, hrsMinsToString, smartCastInt } from "~/api/converters";
+import { decDegToDms, decPlaces4, degAsLatStr, degAsLngStr, extractPlaceString, hrsMinsToString, smartCastInt } from "~/api/converters";
 import { fetchGeo, getGeoTzOffset } from "~/api/geoloc-utils";
 import { AstroChart, GeoLoc, GeoName, TimeZoneInfo, latLngToLocString } from "~/api/models";
 import { currentJulianDate, dateStringToJulianDate, julToDateParts, localDateStringToJulianDate } from "~/api/julian-date";
@@ -23,6 +23,25 @@ interface LocDt {
   jd?: number;
 }
 
+interface LocalDateTimeParts {
+  dateTime: string;
+  timeZone: string;
+  periodName?: string;
+}
+
+const buildDateTimeStrings = (): LocalDateTimeParts => {
+  const dateParts = new Date().toString().split(" ");
+  const timeIndex = dateParts.findIndex(part => /^\d\d?:\d\d?:\d\d$/.test(part));
+  const dtParts = dateParts.slice(0, timeIndex + 1);
+  const tzParts = dateParts.slice(timeIndex + 1);
+  const timeZoneExtended = tzParts.join(' ').replace(/GMT/, 'UTC').replace(/(\d\d)(\d\d)/, "$1h $2m").replace(/0(\d)h/, "$1h").replace(/\b00?m/, "");
+  const parts = timeZoneExtended?.split('(');
+  const numParts = parts instanceof Array ? parts.length : 0;
+  const timeZone = numParts > 0 ? parts[0].trim() : '';
+  const periodName = numParts > 1 ? parts[1].replace(')','').trim() : '';
+  return { dateTime: dtParts.join(' '), timeZone, periodName }
+}
+
 export default function ControlPanel() {
   const [dateString, setDateString] = createSignal(yearsAgoDateString(30));
   const [timeString, setTimeString] = createSignal('12:00');
@@ -39,6 +58,11 @@ export default function ControlPanel() {
   const [applyAya, setApplyAya] = createSignal(true);
   const [ayaKey, setAyaKey] = createSignal("tc");
   const [hsys, setHsys] = createSignal("W");
+  const { dateTime, timeZone } = buildDateTimeStrings();
+  const [currDateString, setCurrDateString] = createSignal(dateTime)
+  const [currTimeZone, setCurrTimeZone] = createSignal(timeZone);
+  const [localPlaceName, setLocalPlaceName] = createSignal('N/A')
+  const [localZoneAbbr, setLocalZoneAbbr] = createSignal('')
   
   // const [json, setJson] = createSignal('')
   
@@ -112,12 +136,8 @@ export default function ControlPanel() {
         }
         if (addPn && keys.includes("placenames")) {
           if (data.placenames instanceof Array) {
-            const numPns = data.placenames.length;
-            const lastPn = data.placenames[numPns - 1];
-            if (lastPn instanceof Object && notEmptyString(lastPn.name)) {
-              const plStr = `${lastPn.name}, ${lastPn.adminName} (${lastPn.countryCode})`;
-              setPlaceString(plStr);
-            }
+            const plStr = extractPlaceString(data.placenames);
+            setPlaceString(plStr);
           }
         }
       }
@@ -169,6 +189,23 @@ export default function ControlPanel() {
             syncLatLng(latitude, longitude);
             toLocal("current-geo", new GeoLoc({ lat: latitude, lng: longitude }));
           }
+          const dtStr = new Date().toISOString().split('.').shift();
+          const locStr = latLngToLocString(latitude, longitude);
+          fetchTz(dtStr as string, locStr, true).then(result => {
+            const { time, placenames } = result;
+            if (placenames instanceof Array) {
+              const plStr = extractPlaceString(placenames);
+              setLocalPlaceName(plStr);
+              const hasPlace = notEmptyString(placeString());
+              if (!hasPlace && defLat() === lat()) {
+                setPlaceString(plStr);
+              }
+            }
+            if (time instanceof Object) {
+              const { abbreviation } = time;
+              setLocalZoneAbbr(abbreviation);
+            }
+          })
         }
       }
     })
@@ -254,12 +291,33 @@ export default function ControlPanel() {
             }
           }
         }
-      }, 500)
+      }, 500);
+      setInterval(() => {
+        const { dateTime, timeZone } = buildDateTimeStrings();
+        setCurrDateString(dateTime)
+        setCurrTimeZone(timeZone);
+      }, 1000);
     }
   })
 
   return (
     <>
+      
+
+    <aside class="status-info flex column">
+        <div class="current-location flex row">
+          <span class="latitude">{degAsLatStr(defLat())}</span>
+          <span class="latitude">{ degAsLngStr(defLng())}</span>
+        </div>
+        <div class="placename">{localPlaceName()}</div>
+        <div class="flex column">
+          <time class="date-time">{currDateString()}</time>
+          <div class="date-time">
+            <span class="tz-offset">{currTimeZone()}</span>
+            <em class="abbreviation">{ localZoneAbbr() }</em>
+          </div>
+      </div>
+    </aside>
       <fieldset class="top-controls grid top-grid" >
         <div class="date-time-bar flex flex-row">
           <input type="date" value={dateString()} size="12" onChange={(e) => updateDate(e)} />

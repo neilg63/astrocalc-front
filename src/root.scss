@@ -13,6 +13,21 @@ body {
     transform: translateZ(-1);
 }
 
+.background-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url(/saturn-view.svg);
+  background-repeat: no-repeat;
+  background-position: bottom right;
+  background-size: 25%;
+  z-index: 0;
+  opacity: 0.125;
+  pointer-events: none;
+}
+
 .dark-mode {
   filter: invert(1);
 }
@@ -36,8 +51,8 @@ body {
   margin: 0 auto;
   max-width: 100vw;
   overflow: hidden;
-  background-color: white;
   position: relative;
+  z-index: 1;
   header {
     position: fixed;
     top: 0;
@@ -137,12 +152,25 @@ main {
 .tooltip-container:hover {
   cursor: pointer;
   color: $primary-blue;
-  font-style: normal;
+  [aria-hidden] {
+    font-style: normal;
+  }
 }
 
 .status-row {
   top: 8.25rem;
 }
+
+dl {
+  .degree {
+    > div {
+      max-width: 6em;
+      white-space: nowrap;
+      text-align: right;
+    }
+  }
+}
+
 .top-controls {
   top: 2.5rem;
   border: none;
@@ -280,6 +308,30 @@ main {
   .extra-data-row {
     .variant-set {
       min-width: 20em;
+    }
+  }
+  aside.status-info {
+    position: fixed;
+    top: 3rem;
+    right: 1%;
+    z-index: 31;
+    div {
+      > em,
+      > span {
+        display: inline-block;
+        margin-right: 0.5em;
+      }
+      > em:last-child,
+      > span:last-child {
+        margin-right: 0;
+      }
+    }
+  }
+
+  .aya-mode {
+    .value,
+    .degree {
+      font-style: italic;
     }
   }
 }

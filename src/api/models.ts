@@ -359,9 +359,11 @@ export class SphutaSet {
 
   constructor(inData: any = null, sortSphutas = false) {
     if (inData instanceof Object) {
-      const { num, items } = inData;
+      const { num, items, ayanamashaNum } = inData;
       if (typeof num === "number") {
         this.ayanamashaNum = num;
+      } else if (typeof ayanamashaNum === "number") {
+        this.ayanamashaNum = ayanamashaNum;
       }
       if (items instanceof Array) {
         this.items = items.map(
@@ -616,7 +618,7 @@ export class AstroChart {
         upagrahas,
       } = inData;
       if (restoreMode) {
-        const { hsets, points, placeName, jd, tz } = inData;
+        const { hsets, points, placeName, jd, tz, ascendantVariants } = inData;
         if (hsets instanceof Array) {
           this.hsets = hsets.map((hs) => new HouseSet(hs));
         }
@@ -631,6 +633,11 @@ export class AstroChart {
         }
         if (tz instanceof Object) {
           this.tz = new TimeZoneInfo(tz);
+        }
+        if (ascendantVariants instanceof Array) {
+          this.ascendantVariants = ascendantVariants.map(
+            (row) => new Variant(row)
+          );
         }
       } else {
         const { house, date, variantHouses } = inData;

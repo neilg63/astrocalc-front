@@ -18,7 +18,6 @@ export default function Home() {
   return (
     <>
       <Title>AstroCalc</Title>
-
     <div class="page-wrapper">
       <header class="page-header">
         <h1 class="compact">AstroCalc</h1>

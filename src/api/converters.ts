@@ -1187,3 +1187,14 @@ export const percent = (proportion = 0, places = 3): string => {
   const perc = smartCastFloat(proportion) * 100;
   return decPlaces(perc, places) + "%";
 };
+
+export const extractPlaceString = (placenames: any[]) => {
+  if (placenames instanceof Array) {
+    const numPns = placenames.length;
+    const lastPn = placenames[numPns - 1];
+    if (lastPn instanceof Object && notEmptyString(lastPn.name)) {
+      return `${lastPn.name}, ${lastPn.adminName} (${lastPn.countryCode})`;
+    }
+  }
+  return "N/A";
+};
