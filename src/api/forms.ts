@@ -5,11 +5,10 @@ const matchesPattern = (str = "", pattern = "", mode = "i"): boolean => {
   return rgx.test(str);
 };
 
-export const updateInputValue = (
-  e: Event,
-  func: Function,
-  validPattern = ""
-) => {
+export const updateInputValue = (e: Event, func: Function, isDate = true) => {
+  const validPattern = isDate
+    ? "\\d\\d\\d\\d-[012][0-9]-[0123][0-9]"
+    : "[012][0-9]:[0-5][0-9](:[0-5][0-9])?";
   if (e.target instanceof HTMLInputElement) {
     if (e.target.value !== undefined) {
       const valid = notEmptyString(validPattern)

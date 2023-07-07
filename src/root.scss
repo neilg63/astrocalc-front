@@ -53,12 +53,13 @@ body {
   overflow: hidden;
   position: relative;
   z-index: 1;
-  header {
+  > header {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     height: 3rem;
+    background-color: white;
     h1.compact {
       font-size: 1.25rem;
       margin: 0.25em auto;
@@ -72,7 +73,7 @@ body {
   }
   main {
     display: grid;
-    padding: 7.5rem 2.5% 1rem 2.5%;
+    padding: 9rem 2.5% 1rem 2.5%;
     min-height: calc(100vh - 12rem);
     ul {
       margin-block-start: 0;
@@ -134,19 +135,20 @@ main {
 .page-wrapper > header,
 .status-row,
 .top-controls {
-  background-color: white;
   z-index: 20;
 }
 
-.status-row,
-.top-controls {
+main > .control-panel {
   position: fixed;
-  left: 2.5%;
-  right: 2.5%;
+  top: 2rem;
+  left: 0;
+  right: 0;
   justify-content: center;
   .actions {
     margin-left: 2rem;
   }
+  z-index: 20;
+  background-color: white;
 }
 
 .tooltip-container:hover {
@@ -155,10 +157,6 @@ main {
   [aria-hidden] {
     font-style: normal;
   }
-}
-
-.status-row {
-  top: 8.25rem;
 }
 
 dl {
@@ -172,7 +170,6 @@ dl {
 }
 
 .top-controls {
-  top: 2.5rem;
   border: none;
   z-index: 24;
   margin-inline-start: 0;
@@ -185,6 +182,10 @@ dl {
   option,
   input {
     font-size: 1rem;
+  }
+  .sidereal-toggle {
+    margin-right: 0.75em;
+    align-items: center;
   }
 }
 p {
@@ -346,17 +347,44 @@ main {
 }
 
 .top-grid {
-  grid-template-areas: "datetime actions"
-                        "location actions";
+  max-width: 70rem;
+  margin: 0 auto;
+  grid-template-columns: 3fr 2fr 1fr;
+  grid-template-areas: "datetime datetime actions"
+                        "location location actions"
+                        "options tabs tabs";
   .date-time-bar {
     grid-area: datetime;
   }
   .location-bar {
     grid-area: location;
+    .coordinate {
+      input {
+        width: 7.5em;
+      }
+    }
+  }
+  .tab-selector {
+    grid-area: tabs;
+    justify-content: flex-end;
+  }
+  .option-bar {
+    grid-area: options;
   }
   .actions {
     grid-area: actions;
   }
+
+  button.submit {
+    user-select: none;
+    span.material-icons {
+      position: relative;
+      left: -0.5em;
+      transform: scale(1.5);
+      pointer-events: none;
+    }
+  }
+
 }
 
 .place-name-wrapper {

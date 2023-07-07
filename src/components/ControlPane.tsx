@@ -1,8 +1,8 @@
-import { For, Show, createEffect, createSignal } from "solid-js";
+import { Show, createEffect, createSignal } from "solid-js";
 import { fetchChartData, fetchTz } from "~/api/fetch";
 import { formatDate, notEmptyString, yearsAgoDateString } from "~/api/utils";
 import { updateInputValue } from "~/api/forms";
-import { decDegToDms, decPlaces4, degAsLatStr, degAsLngStr, extractPlaceString, hrsMinsToString, smartCastInt } from "~/api/converters";
+import { decPlaces4, degAsLatStr, degAsLngStr, extractPlaceString, hrsMinsToString, smartCastInt } from "~/api/converters";
 import { fetchGeo, getGeoTzOffset } from "~/api/geoloc-utils";
 import { AstroChart, GeoLoc, GeoName, TimeZoneInfo, latLngToLocString } from "~/api/models";
 import { currentJulianDate, dateStringToJulianDate, julToDateParts, localDateStringToJulianDate } from "~/api/julian-date";
@@ -11,11 +11,13 @@ import { fromLocal, toLocal } from "~/lib/localstore";
 import AyanamashaSelect from "./AyanamshaSelect";
 import OptionSelect from "./OptionSelect";
 import { houseSystems } from "~/api/mappings";
-import { Button, Checkbox, Icon, IconButton } from "@suid/material";
+import { Button, ButtonGroup, Checkbox, FormControlLabel, Icon, IconButton } from "@suid/material";
 import DmsInput from "./DmsInput";
 import PlaceNameSelector from "./PlaceNameSelector";
 import Tooltip from "./Tooltip";
-
+import IconTrigger from "./IconTrigger";
+import TabSelector from "./TabSelector";
+import { Switch } from "@suid/material";
 
 interface LocDt {
   dt: string;
@@ -45,6 +47,8 @@ const buildDateTimeStrings = (): LocalDateTimeParts => {
 export default function ControlPanel() {
   const [dateString, setDateString] = createSignal(yearsAgoDateString(30));
   const [timeString, setTimeString] = createSignal('12:00');
+  const [endDateString, setEndDateString] = createSignal(yearsAgoDateString(0));
+  const [endTimeString, setEndTimeString] = createSignal('12:00');
   const [offsetHrs, setOffsetHrs] = createSignal(0);
   const [offsetMins, setOffsetMins] = createSignal(0);
   const [tz, setTz] = createSignal(new TimeZoneInfo());
@@ -63,6 +67,7 @@ export default function ControlPanel() {
   const [currTimeZone, setCurrTimeZone] = createSignal(timeZone);
   const [localPlaceName, setLocalPlaceName] = createSignal('N/A')
   const [localZoneAbbr, setLocalZoneAbbr] = createSignal('')
+  const [pane, setPane] = createSignal('core')
   
   // const [json, setJson] = createSignal('')
   
@@ -91,12 +96,15 @@ export default function ControlPanel() {
         // setJson(str)
         setShowData(true);
         toLocal("current-chart", chart);
+        toLocal("core-jd", { jd, tz: chart.tz });
       }
     });
   }
-  const opneChart = () => setShowData(true);
-  const updateDate = (e: Event) => updateInputValue(e, setDateString, '\\d\\d\\d\\d-[012][0-9]-[0123][0-9]');
-  const updateTime = (e: Event) => updateInputValue(e, setTimeString,'[012][0-9]:[0-5][0-9](:[0-5][0-9])?');
+  const openChart = () => setShowData(true);
+  const updateDate = (e: Event) => updateInputValue(e, setDateString, true);
+  const updateTime = (e: Event) => updateInputValue(e, setTimeString, false);
+  const updateEndDate = (e: Event) => updateInputValue(e, setEndDateString, true);
+  const updateEndTime = (e: Event) => updateInputValue(e, setEndTimeString, false);
   const updateOffset = (e: Event, minuteMode = false) => {
     let hrs = offsetHrs();
     let mins = offsetMins();
@@ -151,6 +159,20 @@ export default function ControlPanel() {
       setLat(lat);
       setTimeout(updateGeoTz, 500);
       setPlaceString(name);
+    }
+  }
+
+  const showPane = (key: string): boolean => {
+    const matched = pane() === key;
+    if (matched) {
+      switch (key) {
+        case 'core':
+          return showData();
+        default:
+          return true;
+      }
+    } else {
+      return false;
     }
   }
 
@@ -236,6 +258,58 @@ export default function ControlPanel() {
     return lbls.join(": ");
   }
 
+  const showEndDatetIme = () => {
+    switch (pane()) {
+      case "stations":
+      case "extended":
+      case "transitions":
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  const showHouseSelector = () => {
+    switch (pane()) {
+      case "core":
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  const showAyaSelector = () => {
+    switch (pane()) {
+      case "core":
+      case "extended":
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  const syncCoreDateTime = () => {
+    const stDateInfo = fromLocal('core-jd', 12 * 60 * 60);
+    if (stDateInfo.data instanceof Object) {
+      const { jd, tz } = stDateInfo.data;
+      if (tz instanceof Object) {
+        const dtParts = julToDateParts(jd, tz.utcOffset).toISOSimple().split("T");
+        setDateString(dtParts[0]);
+        setTimeString(dtParts[1]);
+        setTzOffset(tz.utcOffset);
+      }
+    }
+  }
+
+  const updatePane = (key: string) => {
+    setPane(key);
+    switch (key) {
+      case 'core':
+        syncCoreDateTime();
+        break;
+    }
+  }
+
   createEffect(() => {
     syncLocalGeo(true);
     if (!init()) {
@@ -269,7 +343,7 @@ export default function ControlPanel() {
         const chart = new AstroChart(chartData);
         setChart(chart);
         syncLatLng(chart.geo.lat, chart.geo.lng);
-        setTimeout(opneChart, 500);
+        setTimeout(openChart, 500);
         const dateObj = julToDateParts(chart.jd, tz().utcOffset);
         const ps = dateObj.toISOSimple().split('T');
         setDateString(ps[0]);
@@ -318,7 +392,8 @@ export default function ControlPanel() {
           </div>
       </div>
     </aside>
-      <fieldset class="top-controls grid top-grid" >
+      <header class="column control-panel">
+        <fieldset class="top-controls grid top-grid" >
         <div class="date-time-bar flex flex-row">
           <input type="date" value={dateString()} size="12" onChange={(e) => updateDate(e)} />
           <input type="time" value={timeString()} size="12" onChange={(e) => updateTime(e)} />
@@ -326,23 +401,12 @@ export default function ControlPanel() {
             <input type="number" class="hours" value={offsetHrs()} size="1" onChange={(e) => updateOffset(e, false)} step="1" min="-15" max="15" />
             <input type="number" class="minutes" value={offsetMins()} size="1" onChange={(e) => updateOffset(e, true)} step="1" min="0" max="59" />
           </div>
-          <Tooltip label="Set to current date and time">
-            <IconButton aria-label="set-to-current" color="primary" onClick={resetTime}>
-            <Icon>today</Icon>
-          </IconButton>
-          </Tooltip>
-          <AyanamashaSelect value={ayaKey()} onSelect={(e: Event) => selectAyaOpt(e)} />
-          <OptionSelect name="hsys" label="House system" options={houseSystems}  value={hsys} setValue={setHsys} />
-          <div class="field">
-            <Checkbox id="toggle-sidereal" name="apply_ayanamsha" checked={applyAya()} onChange={() => updateApplyAya()} />
-            <label for="toggle-sidereal">Sidereal</label>
-          </div>
-        </div>
-        <div class="actions flex flex-column">
-          <Button variant="outlined" onClick={() => updateGeoTz()}>Check time offset</Button>  
-          <Button variant="outlined" onClick={() => fetchChart()}>
-            Calculate
-            </Button>
+          <IconTrigger icon="today" color="info" label="Set to current date and time" onClick={() => resetTime()} />
+          <IconTrigger icon="query_builder" color="info" label="Check time offset" onClick={() => updateGeoTz()} />
+          <Show when={showEndDatetIme()}>
+            <input type="date" value={endDateString()} size="12" onChange={(e) => updateEndDate(e)} />
+            <input type="time" value={endTimeString()} size="12" onChange={(e) => updateEndTime(e)} />
+          </Show>
         </div>
         <div class="location-bar flex flex-row">
           <PlaceNameSelector value={placeString} onChange={updatePlaceName} label="Locality, region" />
@@ -351,11 +415,34 @@ export default function ControlPanel() {
             <DmsInput label="Longitude" mode="lng" value={lng} changeValue={setLng} />
           </div>
            <Tooltip label={geoResetLabel(defLat(), defLng())}>
-          <IconButton aria-label="set-to-current" color="primary" onClick={resetGeo}>
-            <Icon>my_location</Icon>
+            <IconButton aria-label="set-to-current" color="primary" onClick={resetGeo}>
+              <Icon>my_location</Icon>
             </IconButton>
           </Tooltip>
         </div>
+        <div class="option-bar flex flex-row">
+            <Show when={showAyaSelector()}>
+              <div class="field flex flex-row sidereal-toggle">
+                <label>Tropical</label>
+                <Switch id="toggle-sidereal" checked={applyAya()} onChange={() => updateApplyAya()} />
+                <label>Sidereal</label>
+              </div>
+              
+              <AyanamashaSelect value={ayaKey()} onSelect={(e: Event) => selectAyaOpt(e)} />
+            </Show>
+          <Show when={showHouseSelector()}><OptionSelect name="hsys" label="House system" options={houseSystems}  value={hsys} setValue={setHsys} /></Show>
+          
+        </div>
+        
+        <div class="actions flex flex-column">
+          <Tooltip label="Calculate planetary positions, transitions and special degrees">
+            <Button variant="contained" color="success" size="large" onClick={() => fetchChart()} class="submit">
+              <Icon>calculate</Icon>
+              <span class="text-label">Calculate</span>
+            </Button>
+          </Tooltip>
+        </div>
+        <TabSelector pane={pane} setPane={updatePane} />
       </fieldset>
       <div class="status-row flex flex-row">
         <h4 class="space-parts">
@@ -369,8 +456,12 @@ export default function ControlPanel() {
           <span class="lng" title={decPlaces4(lng())}>{degAsLngStr(lng())}</span>
         </h4>
       </div>
+      </header>
       <div class="results-pane">
-        <Show when={showData()}><ChartData data={chart()} applyAya={applyAya()} /></Show>
+        <Show when={showPane('core')}><ChartData data={chart()} applyAya={applyAya()} /></Show>
+        <Show when={showPane('extended')}><div class="extended">To do: Extended positions </div></Show>
+        <Show when={showPane('transitions')}><div class="transitions">To do: Extended transitions </div></Show>
+        <Show when={showPane('stations')}><div class="stations">To do: Planetary motions </div></Show>
       </div>
     </>
   );

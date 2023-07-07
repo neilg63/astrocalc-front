@@ -1,10 +1,12 @@
 import { TextField } from "@suid/material";
 import { Accessor, createEffect, createSignal } from "solid-js";
 import { degAsDms, dmsStringToDec, dmsStringToNumParts, dmsUnitsToString } from "~/api/converters";
+import { isNumeric } from "~/api/utils";
 
 export default function DmsInput({ label, value, mode, changeValue }: { label: string;  value: Accessor<number>; mode: string, changeValue: Function }) {
   const compassOptions = mode === "lat" ? `(N|S)` : `(E|W)`;
   const matchPattern = `-?[0-9][0-9]?[0-9]?º?\s+[0-9][0-9]?'?\s+[0-9][0-9]?\s*${compassOptions}` 
+  const directionRgx = new RegExp(compassOptions, 'i');
   const [stringValue, setStringValue] = createSignal(degAsDms(value, "lat"));
   const updateValue = (e: Event) => {
     if (e.target instanceof HTMLInputElement) {
@@ -32,7 +34,8 @@ export default function DmsInput({ label, value, mode, changeValue }: { label: s
               if (inp.selectionStart !== null) {
                 const chIndex = inp.selectionStart;
                 let ch = txt.substring(chIndex, chIndex + 1);
-                if (!/[0-9]/.test(ch) && chIndex > 0) {
+                const matchesUnit = /[0-9]/.test(ch) && chIndex > 0 || directionRgx.test(ch) && chIndex > 7;
+                if (!matchesUnit) {
                   ch = txt.substring(chIndex - 1, chIndex);
                 }
                 
@@ -42,9 +45,27 @@ export default function DmsInput({ label, value, mode, changeValue }: { label: s
                   let newMins = mins;
                   let newSecs = secs;
                   let max = mode === "lat" ? 90 : 180;
-
+                  const parts = txt.split(/\b/);
+                  let partIndex = 0;
+                  let minStart = 4;
+                  let secStart = 8;
+                  let numUnits = 0;
+                  parts.forEach(str => {
+                    if (isNumeric(str)) {
+                      numUnits++;
+                      switch (numUnits) {
+                        case 2:
+                          minStart = partIndex;
+                          break;
+                        case 3:
+                          secStart = partIndex;
+                          break;
+                      }
+                    }
+                    partIndex += str.length;
+                  });
                   
-                  if (chIndex < 4) {
+                  if (chIndex < minStart) {
                     if (deg + diff <= max && deg + diff >= 0) {
                       newDeg = deg + diff;
                       if (newDeg === max) {
@@ -52,7 +73,7 @@ export default function DmsInput({ label, value, mode, changeValue }: { label: s
                         newSecs = 0;
                       }
                     }
-                  } else if (chIndex < 8) {
+                  } else if (chIndex < secStart) {
                     if (mins + diff <= 60 && deg + diff <= max && mins + diff >= 0) {
                       newMins = mins + diff;
                       if (newMins === 60) {
@@ -69,6 +90,21 @@ export default function DmsInput({ label, value, mode, changeValue }: { label: s
                   setTimeout(() => {
                     inp.setSelectionRange(chIndex, chIndex);
                   }, 25)
+                } else if (directionRgx.test(ch) && ch.length === 1) {
+                  const ucLetter = ch.toUpperCase();
+                  let newDir = '';
+                  switch (mode) {
+                    case 'lat':
+                      newDir = ucLetter === 'S' ? 'N' : 'S';
+                      break;
+                    case 'lng':
+                      newDir = ucLetter === 'E' ? 'W' : 'E';
+                      break;
+                  }
+                  setStringValue(txt.replace(ch, newDir));
+                  setTimeout(() => {
+                    inp.setSelectionRange(chIndex, chIndex);
+                  }, 25)
                 }
               }
             }
@@ -82,5 +118,6 @@ export default function DmsInput({ label, value, mode, changeValue }: { label: s
   createEffect(() => {
     setStringValue(degAsDms(value(), mode))
   });
-  return <TextField variant="standard" value={stringValue()} label={label} inputProps={{ pattern: matchPattern, size: 20 }} size="small" onChange={(e) => updateValue(e)} onKeyDown={(e) => register(e)} />
+  const widgetClasses = ['coordinate', mode].join(' ');
+  return <TextField variant="standard" class={widgetClasses} value={stringValue()} label={label} inputProps={{ pattern: matchPattern, size: 20 }} size="small" onChange={(e) => updateValue(e)} onKeyDown={(e) => register(e)} />
 }

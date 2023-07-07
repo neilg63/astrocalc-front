@@ -1,5 +1,3 @@
-import { InputLabel, MenuItem, FormControl, Select } from "@suid/material";
-import { SelectChangeEvent } from "@suid/material/Select";
 import { Accessor, For } from "solid-js";
 import { snakeToWords } from "~/api/converters";
 import { KeyName } from "~/api/mappings";
