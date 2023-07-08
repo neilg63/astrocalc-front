@@ -19,6 +19,7 @@ import IconTrigger from "./IconTrigger";
 import TabSelector from "./TabSelector";
 import { Switch } from "@suid/material";
 import ButtonIconTrigger from "./ButtonIconTrigger";
+import SlideToggle from "./SlideToggle";
 
 interface LocDt {
   dt: string;
@@ -435,11 +436,7 @@ export default function ControlPanel() {
         </div>
         <div class="option-bar flex flex-row">
           <Show when={showAyaSelector()}>
-            <div class="field flex flex-row sidereal-toggle">
-              <label>Tropical</label>
-              <Switch id="toggle-sidereal" checked={applyAya()} onChange={() => updateApplyAya()} />
-              <label>Sidereal</label>
-            </div>
+              <SlideToggle offName="tropical" onName="sidereal" isOn={applyAya} onChange={updateApplyAya} key="sidereal-toggle" />
             <AyanamashaSelect value={ayaKey()} onSelect={(e: Event) => selectAyaOpt(e)} />
           </Show>
           <Show when={showHouseSelector()}><OptionSelect name="hsys" label="House system" options={houseSystems}  value={hsys} setValue={setHsys} /></Show>
