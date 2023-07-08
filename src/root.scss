@@ -190,6 +190,26 @@ dl {
     align-items: center;
   }
 }
+
+.value-toggle {
+  &.off .off-label,
+  &.on .on-label {
+    color: $primary-blue;
+    font-weight: bold;
+    pointer-events: none;
+  }
+  &.off .on-label,
+  &.on .off-label {
+    cursor: pointer;
+    &:hover {
+      color: $primary-blue
+    }
+  }
+  label {
+    user-select: none;
+  }
+}
+
 p {
   margin: 1rem auto;
   line-height: 1.35;
