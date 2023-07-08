@@ -16,8 +16,8 @@ body {
 .background-container {
   position: fixed;
   top: 0;
-  left: 0;
-  right: 0;
+  left: 1%;
+  right: 1%;
   bottom: 0;
   background-image: url(/saturn-view.svg);
   background-repeat: no-repeat;
@@ -156,6 +156,8 @@ main > .control-panel {
   color: $primary-blue;
   [aria-hidden] {
     font-style: normal;
+    max-width: 10em;
+    white-space: normal;
   }
 }
 

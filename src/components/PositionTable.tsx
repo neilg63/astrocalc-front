@@ -1,7 +1,7 @@
 import { For, Show } from "solid-js";
 import { camelToTitle, decPlaces6, degAsDms, standardDecHint, tropicalDecHint } from "~/api/converters";
 import { matchNameByGrahaKey } from "~/api/mappings";
-import { AstroChart } from "~/api/models";
+import { AstroChart, Graha } from "~/api/models";
 import IconTrigger from "./IconTrigger";
 import Tooltip from "./Tooltip";
 
@@ -9,6 +9,22 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
   const ayaOffset = applyAya ? data.ayanamsha : 0;
   //const toDegDns = (deg: number): string => degAsDms(subtractLng360(deg, ayaOffset));
   const singleVariantSetMode = data.hasVariants && data.numVariants === 1;
+
+  const buildLngLabel = (item: Graha) => {
+    const parts = [tropicalDecHint(item.lng)]
+    if (item.hasTopo) {
+      parts.push(`topocentric: ${decPlaces6(item.lngTopo)}`);
+    }
+    return parts.join(", ");
+  }
+
+  const buildLatLabel = (item: Graha) => {
+    const parts = [standardDecHint(item.lat)]
+    if (item.hasTopo) {
+      parts.push(`topocentric: ${decPlaces6(item.latTopo)}`);
+    }
+    return parts.join(", ");
+  }
 
   const toTabGrid = () => {
     const rows = data.grahas.map(body => {
@@ -51,7 +67,7 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
         {(item) => <tr class={item.key}>
           <td class="key">{ matchNameByGrahaKey(item.key) }</td>
           <td class="numeric lng sid-based" >
-            <Tooltip label={tropicalDecHint(item.lng)}>
+            <Tooltip label={buildLngLabel(item)}>
               {degAsDms(item.longitude(ayaOffset))}
             </Tooltip>
           </td>
@@ -59,7 +75,7 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
             {decPlaces6(item.lngSpeed)}
           </Show></td>
           <td class="numeric lat"><Show when={item.showLat}>
-            <Tooltip label={standardDecHint(item.lat)}>{degAsDms(item.lat)}</Tooltip>
+            <Tooltip label={buildLatLabel(item)}>{degAsDms(item.lat)}</Tooltip>
           </Show></td>
           <td class="numeric lat-speed"><Show when={item.showLatSpeed}>{decPlaces6(item.latSpeed)}</Show></td>
           <td class="numeric ras">

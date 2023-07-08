@@ -381,6 +381,8 @@ export class Graha {
   key = "";
   lng = 0;
   lat = 0;
+  lngTopo = -1;
+  latTopo = 0;
   latSpeed = 0;
   latSpeedEq = 0;
   lngSpeed = 0;
@@ -402,6 +404,8 @@ export class Graha {
           switch (key) {
             case "lat":
             case "lng":
+            case "latTopo":
+            case "lngTopo":
             case "latSpeed":
             case "lngSpeed":
             case "latSpeedEq":
@@ -431,6 +435,17 @@ export class Graha {
 
   longitude(ayanamshaOffset = 0): number {
     return subtractLng360(this.lng, ayanamshaOffset);
+  }
+
+  setTopo(lng = -1, lat = 0) {
+    if (lng >= 0) {
+      this.lngTopo = lng;
+      this.latTopo = lat;
+    }
+  }
+
+  get hasTopo() {
+    return this.lngTopo >= 0;
   }
 
   get hasVariants(): boolean {
@@ -617,6 +632,11 @@ export class AstroChart {
         sphutas,
         upagrahas,
       } = inData;
+
+      if (bodies instanceof Array) {
+        this.bodies = bodies.map((b) => new Graha(b));
+      }
+
       if (restoreMode) {
         const { hsets, points, placeName, jd, tz, ascendantVariants } = inData;
         if (hsets instanceof Array) {
@@ -640,7 +660,7 @@ export class AstroChart {
           );
         }
       } else {
-        const { house, date, variantHouses } = inData;
+        const { house, date, variantHouses, topoVariants } = inData;
         if (house instanceof Object) {
           const { points, sets } = house;
           this.points = new PointSet(points);
@@ -668,13 +688,21 @@ export class AstroChart {
         if (notEmptyString(placeNameString)) {
           this.placeName = placeNameString;
         }
+        if (topoVariants instanceof Array && topoVariants.length > 0) {
+          topoVariants.forEach((row) => {
+            if (row instanceof Object) {
+              const { key, lng, lat } = row;
+              const gr = this.bodies.find((b) => b.key === key);
+              if (gr instanceof Graha) {
+                gr.setTopo(lng, lat);
+              }
+            }
+          });
+        }
       }
 
       if (geo instanceof Object) {
         this.geo = new GeoLoc(geo);
-      }
-      if (bodies instanceof Array) {
-        this.bodies = bodies.map((b) => new Graha(b));
       }
       if (indianTime instanceof Object) {
         this.indianTime = new ITime(indianTime);

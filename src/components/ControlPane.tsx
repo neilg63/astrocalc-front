@@ -11,13 +11,14 @@ import { fromLocal, toLocal } from "~/lib/localstore";
 import AyanamashaSelect from "./AyanamshaSelect";
 import OptionSelect from "./OptionSelect";
 import { houseSystems } from "~/api/mappings";
-import { Button, ButtonGroup, Checkbox, FormControlLabel, Icon, IconButton } from "@suid/material";
+import { Icon, IconButton } from "@suid/material";
 import DmsInput from "./DmsInput";
 import PlaceNameSelector from "./PlaceNameSelector";
 import Tooltip from "./Tooltip";
 import IconTrigger from "./IconTrigger";
 import TabSelector from "./TabSelector";
 import { Switch } from "@suid/material";
+import ButtonIconTrigger from "./ButtonIconTrigger";
 
 interface LocDt {
   dt: string;
@@ -86,10 +87,16 @@ export default function ControlPanel() {
     return dateStringToJulianDate(dt, 0 - tzOffset()).toISOSimple();
   }
 
-  const fetchChart = () => {
+  const fetchChart = (daysOffset = 0) => {
     const { loc, jd } = extractDtLoc();
+    const refJd = typeof jd === "number" ? jd + daysOffset : daysOffset;
     setShowData(false);
-    fetchChartData({ ct: 1, jd, loc, it: 1, aya: ayaKey(), upa: 1, jyo: 1, hsys: hsys() }).then((data: any) => {
+    if (daysOffset !== 0 && typeof jd === "number") {
+      const refTs = new Date(dateString()).getTime() + daysOffset * 24 * 60 * 60 * 1000;
+      const nextDt = new Date(refTs).toISOString().split("T").shift();
+      setDateString(nextDt as string)
+    }
+    fetchChartData({ ct: 1, jd: refJd, loc, it: 1, aya: ayaKey(), upa: 1, jyo: 1, hsys: hsys(), topo: 2 }).then((data: any) => {
       if (data instanceof Object && data.date.jd > 0) {
         const chart = new AstroChart(data, tz(), placeString());
         setChart(chart);
@@ -99,6 +106,12 @@ export default function ControlPanel() {
         toLocal("core-jd", { jd, tz: chart.tz });
       }
     });
+  }
+  const fetchChartNext = () => {
+    fetchChart(1);
+  }
+  const fetchChartPrev = () => {
+    fetchChart(-1);
   }
   const openChart = () => setShowData(true);
   const updateDate = (e: Event) => updateInputValue(e, setDateString, true);
@@ -421,26 +434,22 @@ export default function ControlPanel() {
           </Tooltip>
         </div>
         <div class="option-bar flex flex-row">
-            <Show when={showAyaSelector()}>
-              <div class="field flex flex-row sidereal-toggle">
-                <label>Tropical</label>
-                <Switch id="toggle-sidereal" checked={applyAya()} onChange={() => updateApplyAya()} />
-                <label>Sidereal</label>
-              </div>
-              
-              <AyanamashaSelect value={ayaKey()} onSelect={(e: Event) => selectAyaOpt(e)} />
-            </Show>
+          <Show when={showAyaSelector()}>
+            <div class="field flex flex-row sidereal-toggle">
+              <label>Tropical</label>
+              <Switch id="toggle-sidereal" checked={applyAya()} onChange={() => updateApplyAya()} />
+              <label>Sidereal</label>
+            </div>
+            <AyanamashaSelect value={ayaKey()} onSelect={(e: Event) => selectAyaOpt(e)} />
+          </Show>
           <Show when={showHouseSelector()}><OptionSelect name="hsys" label="House system" options={houseSystems}  value={hsys} setValue={setHsys} /></Show>
-          
         </div>
-        
         <div class="actions flex flex-column">
-          <Tooltip label="Calculate planetary positions, transitions and special degrees">
-            <Button variant="contained" color="success" size="large" onClick={() => fetchChart()} class="submit">
-              <Icon>calculate</Icon>
-              <span class="text-label">Calculate</span>
-            </Button>
-          </Tooltip>
+            <ButtonIconTrigger name="Calculate" color="success" onClick={fetchChart} label="Calculate planetary positions, transitions and special degrees" key="submit" size="large" icon="calculate" />
+            <div class="flex flex-row">
+              <IconTrigger label="Previous day" color="success" icon="arrow_back" onClick={fetchChartPrev} />
+              <IconTrigger label="Next day" color="success" icon="arrow_forward" onClick={fetchChartNext} />
+            </div>
         </div>
         <TabSelector pane={pane} setPane={updatePane} />
       </fieldset>
