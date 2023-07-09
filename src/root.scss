@@ -240,10 +240,38 @@ dl {
     }
   }
   &.tropical-mode {
-    &.extended {
+    &.extended-pane {
       .ayanamshas {
-        filter: grayscale(1) brightness(200%);
+        filter: grayscale(1) contrast(75%);
+        opacity: 0.75;
+        pointer-events: none;
       }
+    }
+  }
+}
+
+td .tooltip-container {
+
+  span,
+  sup {
+    display: inline-block;
+  }
+
+
+  .degrees {
+    width: 2em;
+    text-align: right;
+  }
+
+  sup {
+    top: 0.25em;
+    position: relative;
+    font-size: 0.75em;
+    &.minutes {
+      margin: 0 0 0 0.375em;
+    }
+    &.seconds {
+      margin: 0 0 0 0.25em;
     }
   }
 }

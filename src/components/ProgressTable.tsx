@@ -1,8 +1,8 @@
 import { For, Show } from "solid-js";
-import { camelToTitle, decPlaces4, decPlaces6, degAsDms, degDecHint, julToLongDate, standardDecHint, tropicalDecHint } from "~/api/converters";
+import { decPlaces4, decPlaces6, degDecHint, julToLongDate } from "~/api/converters";
 import { matchNameByGrahaKey } from "~/api/mappings";
 import { Body, BodySet, ProgressSet } from "~/api/models";
-import Tooltip from "./Tooltip";
+import DegreeTip from "./DegreeTip";
 
 
 export default function ProgressTable({ data }: {data: ProgressSet}) {
@@ -75,7 +75,7 @@ export default function ProgressTable({ data }: {data: ProgressSet}) {
           <td class="datetime">{ toDateTime(item.jd) }</td>
           <For each={item.bodies}>
             {(body, bi) => <td class={toBodyClasses(body, bi())}>
-              <Tooltip label={buildBodyLabel(body)}>{degAsDms(body.lng)}</Tooltip>
+              <DegreeTip label={buildBodyLabel(body)} degree={body.lng} />
             </td>}
           </For>
       </tr>}

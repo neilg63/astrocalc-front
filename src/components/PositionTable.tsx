@@ -1,9 +1,9 @@
 import { For, Show } from "solid-js";
-import { camelToTitle, decPlaces6, degAsDms, standardDecHint, tropicalDecHint } from "~/api/converters";
+import { camelToTitle, decPlaces6, standardDecHint, tropicalDecHint } from "~/api/converters";
 import { matchNameByGrahaKey } from "~/api/mappings";
 import { AstroChart, Graha } from "~/api/models";
 import IconTrigger from "./IconTrigger";
-import Tooltip from "./Tooltip";
+import DegreeTip from "./DegreeTip";
 
 export default function PositionTable({ data, applyAya }: {data: AstroChart, applyAya: boolean}) {
   const ayaOffset = applyAya ? data.ayanamsha : 0;
@@ -67,28 +67,26 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
         {(item) => <tr class={item.key}>
           <td class="key">{ matchNameByGrahaKey(item.key) }</td>
           <td class="numeric lng sid-based" >
-            <Tooltip label={buildLngLabel(item)}>
-              {degAsDms(item.longitude(ayaOffset))}
-            </Tooltip>
+            <DegreeTip label={buildLngLabel(item)} degree={item.longitude(ayaOffset)} />
           </td>
           <td class="numeric lng-speed"><Show when={item.showLngSpeed}>
             {decPlaces6(item.lngSpeed)}
           </Show></td>
           <td class="numeric lat"><Show when={item.showLat}>
-            <Tooltip label={buildLatLabel(item)}>{degAsDms(item.lat)}</Tooltip>
+            <DegreeTip label={buildLatLabel(item)} degree={item.lat} />
           </Show></td>
           <td class="numeric lat-speed"><Show when={item.showLatSpeed}>{decPlaces6(item.latSpeed)}</Show></td>
           <td class="numeric ras">
-            <Tooltip label={standardDecHint(item.rectAscension)}>{degAsDms(item.rectAscension)}</Tooltip>
+            <DegreeTip label={standardDecHint(item.rectAscension)} degree={item.rectAscension} />
           </td>
           <td class="numeric dec">
-              <Tooltip label={standardDecHint(item.declination)}>{degAsDms(item.declination)}</Tooltip>
+            <DegreeTip label={standardDecHint(item.declination)} degree={item.declination} />
           </td>
           <td class="numeric azi">
-            <Tooltip label={standardDecHint(item.azimuth)}>{degAsDms(item.azimuth)}</Tooltip>
+            <DegreeTip label={standardDecHint(item.azimuth)} degree={item.azimuth} />
           </td>
           <td class="numeric alt">
-            <Tooltip label={standardDecHint(item.altitude)}>{degAsDms(item.altitude)}</Tooltip>
+            <DegreeTip label={standardDecHint(item.altitude)} degree={item.altitude} />
           </td>
           <Show when={singleVariantSetMode}>
             <td class="numeric sign sid-based">{item.firstVariant.sign}</td>

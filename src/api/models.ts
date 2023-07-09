@@ -574,7 +574,12 @@ export class ProgressSet {
 
   get perDay(): number {
     const num = this.numRows;
-    return num > 0 ? this.days / num : 0;
+    return num > 0 && this.days > 0 ? Math.round(num / this.days) : 0;
+  }
+
+  get multiple(): number {
+    const num = this.numRows;
+    return num > 0 && this.days > 0 ? Math.round(this.days / num) : 0;
   }
 }
 
