@@ -41,7 +41,7 @@ export default function TabSelector({ pane, setPane }: { pane: Accessor<string>,
 
   return <ButtonGroup class={tabSelectorClasses()} variant="outlined" aria-label="outlined button group" onClick={handleChange}>
     <For each={tabItems}>
-      {(item) => <Tooltip label={item.label}><Button variant={itemType(item.value)}  value={item.value}>{item.name}</Button></Tooltip>}
+      {(item) => <Tooltip label={item.label} single={true}><Button variant={itemType(item.value)}  value={item.value}>{item.name}</Button></Tooltip>}
     </For>
   </ButtonGroup>
 }
