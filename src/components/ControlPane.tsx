@@ -313,6 +313,10 @@ export default function ControlPanel() {
         }, 500);
         setEq(toEqKey(pSet.coordSystem));
         setTopo(pSet.topoMode);
+        if (pSet.perDay > 0) {
+          setNumUnits(pSet.days);
+          setFrequency(pSet.perDay);
+        }
       }
     }
   }
@@ -414,6 +418,17 @@ export default function ControlPanel() {
     toLocal('pane', key);
   }
 
+  const astroControlClasses = (): string => {
+    const cls = ["top-controls", "grid", "top-grid"];
+    if (applyAya()) {
+      cls.push("sidereal-mode");
+    } else {
+      cls.push("tropical-mode");
+    }
+    cls.push([pane(),'pane'].join('-'));
+    return cls.join(" ");
+  }
+
   createEffect(() => {
     syncLocalGeo(true);
     if (!init()) {
@@ -497,7 +512,7 @@ export default function ControlPanel() {
       </div>
     </aside>
       <header class="column control-panel">
-        <fieldset class="top-controls grid top-grid" >
+        <fieldset class={ astroControlClasses()}>
         <div class="date-time-bar flex flex-row">
           <input type="date" value={dateString()} size="12" onChange={(e) => updateDate(e)} />
           <input type="time" value={timeString()} size="12" onChange={(e) => updateTime(e)} />

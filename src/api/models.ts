@@ -567,6 +567,15 @@ export class ProgressSet {
     }
     return [];
   }
+
+  get numRows(): number {
+    return this.items.length;
+  }
+
+  get perDay(): number {
+    const num = this.numRows;
+    return num > 0 ? this.days / num : 0;
+  }
 }
 
 /*

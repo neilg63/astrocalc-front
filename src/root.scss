@@ -87,6 +87,7 @@ body {
     .status-row {
       flex-flow: row wrap;
       justify-content: center;
+      padding: 0.25em 0;
       > h4 {
         margin: 0.125rem 2rem 0.125rem 0;
       }
@@ -236,6 +237,13 @@ dl {
       text-align: right;
       min-width: 2.5em;
       max-width: 3em;
+    }
+  }
+  &.tropical-mode {
+    &.extended {
+      .ayanamshas {
+        filter: grayscale(1) brightness(200%);
+      }
     }
   }
 }
@@ -422,6 +430,24 @@ main {
                         "options tabs tabs";
   .date-time-bar {
     grid-area: datetime;
+    margin-bottom: 0.375em;
+    
+  }
+  > .flex {
+    > input {
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      outline: none;
+  
+      &:hover {
+        border-bottom-color: black;
+      }
+  
+      &:focus {
+        border-bottom-color: $primary-blue;
+      }
+    }
   }
   .location-bar {
     grid-area: location;
@@ -440,11 +466,10 @@ main {
   }
   .actions {
     grid-area: actions;
-    
-    button:hover {
-      filter: hue-rotate(180deg);
-    }
-
+  }
+  .actions button:hover,
+  .tooltip-container:hover .material-icons {
+    filter: hue-rotate(180deg);
   }
 
   button.submit {
