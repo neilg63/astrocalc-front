@@ -37,7 +37,10 @@ export default function Tooltip({ label, children }: { label: string;  children:
           <For each={parts}>
             {(line) => <p>{ line }</p>}
           </For>
-        </Show>
+          </Show>
+          <Show when={!multiLine}>
+              {label}
+            </Show>
           </Box>
         </Popover>
     </div>
