@@ -544,10 +544,12 @@ export default function ControlPanel() {
         </div>
         <div class="actions flex flex-column">
             <ButtonIconTrigger name="Calculate" color="success" onClick={fetchData} label="Calculate planetary positions, transitions and special degrees" key="submit" size="large" icon="calculate" />
-            <div class="flex flex-row next-prev">
-              <IconTrigger label="Previous day" color="success" icon="arrow_back" onClick={fetchChartPrev} />
-              <IconTrigger label="Next day" color="success" icon="arrow_forward" onClick={fetchChartNext} />
-            </div>
+            <Show when={showNextPrev()}>
+              <div class="flex flex-row next-prev">
+                <IconTrigger label="Previous day" color="success" icon="arrow_back" onClick={fetchChartPrev} />
+                <IconTrigger label="Next day" color="success" icon="arrow_forward" onClick={fetchChartNext} />
+              </div>
+            </Show>
         </div>
         <TabSelector pane={pane} setPane={updatePane} />
       </fieldset>
