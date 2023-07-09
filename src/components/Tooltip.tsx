@@ -1,7 +1,7 @@
 import { Box, Popover } from "@suid/material";
 import { For, JSXElement, Show, createSignal } from "solid-js";
 
-export default function Tooltip({ label, children }: { label: string;  children: JSXElement}) {
+export default function Tooltip({ label, single, children }: { label: string; single?: boolean; children: JSXElement}) {
   const [anchorEl, setAnchorEl] = createSignal<Element | undefined>(undefined);
   const handlePopoverOpen = (event: { currentTarget: Element }) => {
     setAnchorEl(event.currentTarget);
@@ -12,8 +12,8 @@ export default function Tooltip({ label, children }: { label: string;  children:
   };
 
   const open = () => Boolean(anchorEl());
-
-  const multiLine = label.includes(",");
+  
+  const multiLine = single !== true && label.includes(",");
   const parts = multiLine ? label.split(",").map(s => s.trim()) : [];
 
   return <div class="tooltip-container" aria-haspopup="true"

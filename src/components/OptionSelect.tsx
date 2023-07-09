@@ -13,7 +13,7 @@ export default function OptionSelect({ name, label, options, value, setValue }: 
   const isSelected = (refKey: string): boolean => {
     return refKey === value();
   }
-  return <Tooltip label={label}>
+  return <Tooltip label={label} single={true}>
     <select id={controlId} onChange={onSelect}>
       <For each={options}>
         {(item) => <option value={item.key} selected={isSelected(item.key)}>{snakeToWords(item.name)}</option>}

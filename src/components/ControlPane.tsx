@@ -516,14 +516,14 @@ export default function ControlPanel() {
         <div class="date-time-bar flex flex-row">
           <input type="date" value={dateString()} size="12" onChange={(e) => updateDate(e)} />
           <input type="time" value={timeString()} size="12" onChange={(e) => updateTime(e)} />
-          <Tooltip label="Time zone offset from UTC in hours and minutes">
+          <Tooltip label="Time zone offset from UTC in hours and minutes" single={true}>
             <input type="number" class="numeric hours" value={offsetHrs()} size="1" onChange={(e) => updateOffset(e, false)} step="1" min="-15" max="15" />
             <input type="number" class="numeric minutes" value={offsetMins()} size="1" onChange={(e) => updateOffset(e, true)} step="1" min="0" max="59" />
           </Tooltip>
           <IconTrigger icon="today" color="info" label="Set to current date and time" onClick={() => resetTime()} />
             <IconTrigger icon="query_builder" color="info" label="Check time offset" onClick={() => updateGeoTz()} />
             <Show when={showDaysSpan()}>
-              <Tooltip label="Span in days with number per day">
+              <Tooltip label="Span in days with number per day" single={true}>
                 <input type="number" value={numUnits()} min="1" max="366" onChange={(e) => updateUnits(e)} class="numeric num-days" />
                 <OptionSelect name="unit" label="Unit" options={matchUnitsBySection(pane())} value={unitType} setValue={setUnitType} />
                 <input type="number" value={frequency()} min="1" max="24" onChange={(e) => updateFrequency(e)} class="numeric frequency" />
