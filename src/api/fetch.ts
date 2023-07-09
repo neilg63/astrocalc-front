@@ -1,6 +1,7 @@
 import { astroCalcBase, geoTimeBase } from "./settings";
-import { notEmptyString, renderDateRange } from "./utils";
+import { isNumeric, notEmptyString, renderDateRange } from "./utils";
 import { ParamSet } from "./interfaces";
+import { smartCastInt } from "./converters";
 
 const matchService = (service = "") => {
   switch (service) {
@@ -56,7 +57,7 @@ export const fetchContentGeo = async (
 
 export const fetchChartData = async (params: ParamSet): Promise<any> => {
   const method = `chart-data`;
-  const keys = Object.entries(params);
+  const keys = Object.keys(params);
   if (keys.length < 2) {
     params = {
       dt: "1978-06-28T11:30:30",
@@ -68,6 +69,40 @@ export const fetchChartData = async (params: ParamSet): Promise<any> => {
     };
   }
   return await fetchContentAstro(method, params);
+};
+
+export const fetchProgressData = async (params: ParamSet): Promise<any> => {
+  const method = `progress`;
+  const filter: Map<string, any> = new Map(Object.entries(params));
+  filter.set("sid", 0);
+  if (filter.has("tc")) {
+    const tc = filter.get("tc");
+    if (notEmptyString(tc) && tc.length === 2 && tc !== "--") {
+      filter.set("sid", 1);
+    }
+  }
+  if (filter.has("topo")) {
+    const topo = filter.get("topo");
+    filter.set("topo", topo === true ? 1 : 0);
+  } else {
+    filter.set("topo", 0);
+  }
+  if (filter.has("eq")) {
+    const eq = filter.get("eq");
+    if (isNumeric(eq)) {
+      filter.set("eq", smartCastInt(eq, 0));
+    }
+  } else {
+    filter.set("eq", 0);
+  }
+
+  if (filter.has("days")) {
+    const days = filter.get("days");
+    if (isNumeric(days)) {
+      filter.set("days", smartCastInt(days, 10));
+    }
+  }
+  return await fetchContentAstro(method, Object.fromEntries(filter.entries()));
 };
 
 export const fetchTz = async (

@@ -1,6 +1,7 @@
 $primary-blue: #1976d2;
 $dark-blue: #000066;
-
+$dark-red: #880000;
+$light-grey: #cccccc;
 
 body {
   font-family: Gordita, Roboto, Oxygen, Ubuntu, Cantarell,
@@ -126,6 +127,25 @@ main {
       }
     }
     margin-bottom: 2.5em;
+    &.progress-data {
+      tbody {
+        td {
+          font-size: 0.9em;
+          padding: 0.125em 1em;
+        }
+      }
+    }
+    td,
+    th {
+      &.odd {
+        color: $dark-red;
+      }
+    }
+    tbody tr:hover {
+      td {
+        background-color: rgba($light-grey, 0.25);
+      }
+    }
   }
   .results-pane {
     margin: 2.5rem auto 2rem auto;
@@ -156,8 +176,28 @@ main > .control-panel {
   color: $primary-blue;
   [aria-hidden] {
     font-style: normal;
-    max-width: 10em;
+    
     white-space: normal;
+  }
+  .hover-content {
+    max-width: 15em;
+    padding: 0.5em;
+    border-radius: 0.5em;
+    text-align: left;
+    p {
+      margin: 0;
+      padding: 0 0 0.125em 0;
+    }
+  }
+}
+
+.next-prev {
+  justify-content: center;
+  > :first-child {
+    margin-right: 1.5em;
+  }
+  > :last-child {
+    margin-left: 1.5em;
   }
 }
 
@@ -187,11 +227,21 @@ dl {
   }
   .sidereal-toggle {
     margin-right: 0.75em;
-    align-items: center;
+  }
+  .tooltip-container {
+    display: flex;
+    flex-flow: row nowrap;
+
+    input.numeric {
+      text-align: right;
+      min-width: 2.5em;
+      max-width: 3em;
+    }
   }
 }
 
 .value-toggle {
+  align-items: center;
   &.off .off-label,
   &.on .on-label {
     color: $primary-blue;
@@ -208,6 +258,10 @@ dl {
   label {
     user-select: none;
   }
+}
+
+.topo-toggle {
+  margin-left: 0.75em;
 }
 
 p {
@@ -268,15 +322,6 @@ main dl.grid-2 {
   }
 }
 
-.tz-offset-control {
-  display: flex;
-  flex-flow: row nowrap;
-  input {
-    text-align: right;
-    min-width: 2.5em;
-    max-width: 3em;
-  }
-}
 
 .top-info {
   .flex-grid {
@@ -395,6 +440,11 @@ main {
   }
   .actions {
     grid-area: actions;
+    
+    button:hover {
+      filter: hue-rotate(180deg);
+    }
+
   }
 
   button.submit {

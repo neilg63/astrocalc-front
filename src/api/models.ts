@@ -1,15 +1,23 @@
 import {
   camelToTitle,
   smartCastFloat,
+  smartCastInt,
   snakeToWords,
   subtractLng360,
   zeroPad,
 } from "./converters";
+import { toEqInt } from "./mappings";
 import { isNumeric, notEmptyString } from "./utils";
 
 export interface KeyNumValue {
   key: string;
   num?: number;
+  value: number;
+}
+
+export interface KeyNumName {
+  key: string;
+  name: string;
   value: number;
 }
 
@@ -377,21 +385,16 @@ export class SphutaSet {
   }
 }
 
-export class Graha {
+/*
+ * Basic celestial object used with BodySet.
+ * lng and lat may refer to right ascension, declination, azimuth and altitude depending on the body set topocentric equoatorial mode
+ */
+export class Body {
   key = "";
   lng = 0;
   lat = 0;
-  lngTopo = -1;
-  latTopo = 0;
   latSpeed = 0;
-  latSpeedEq = 0;
   lngSpeed = 0;
-  lngSpeedEq = 0;
-  rectAscension = 0;
-  declination = 0;
-  altitude = 0;
-  azimuth = 0;
-  variants: Variant[] = [];
 
   constructor(inData: any = null) {
     if (inData instanceof Object) {
@@ -404,10 +407,191 @@ export class Graha {
           switch (key) {
             case "lat":
             case "lng":
-            case "latTopo":
-            case "lngTopo":
             case "latSpeed":
             case "lngSpeed":
+              this[key] = flVal;
+              break;
+          }
+        }
+      });
+    }
+  }
+
+  longitude(ayanamshaOffset = 0): number {
+    return subtractLng360(this.lng, ayanamshaOffset);
+  }
+
+  get isPlanet(): boolean {
+    return (
+      ["as", "ds", "su"].includes(this.key) === false && this.key.length === 2
+    );
+  }
+
+  get showLat(): boolean {
+    return this.lat !== 0 || this.isPlanet;
+  }
+
+  get showLngSpeed(): boolean {
+    return this.lngSpeed !== 0 || this.isPlanet;
+  }
+
+  get showLatSpeed(): boolean {
+    return this.latSpeed !== 0 || this.isPlanet;
+  }
+}
+
+export class BodySet {
+  jd = 0;
+
+  bodies: Body[] = [];
+
+  constructor(inData: any = null) {
+    if (inData instanceof Object) {
+      const { jd, bodies } = inData;
+      if (bodies instanceof Array && bodies.length > 0) {
+        this.bodies = bodies.map((row) => new Body(row));
+      }
+      if (typeof jd === "number" && jd > 0) {
+        this.jd = jd;
+      }
+    }
+  }
+}
+
+export class ProgressSet {
+  jd = 0; // start JD
+
+  days = 0;
+
+  tz = new TimeZoneInfo(); // local time zone info at the referenced time and place
+
+  ayanamsha = 0;
+
+  ayanamshaKey = "";
+
+  geo = new GeoLoc();
+
+  placeNames = "";
+
+  coordSystem = 0; // 0 ecliptic, 1 equatorial, 2 horizontal
+
+  topoMode = false; // true: topocentric, false geocentric
+
+  items: BodySet[] = [];
+
+  constructor(inData: any = null, tz: any = null, placeString = "") {
+    if (tz instanceof Object) {
+      this.tz = new TimeZoneInfo(tz);
+    }
+    if (notEmptyString(placeString)) {
+      this.placeNames = placeString;
+    }
+    if (inData instanceof Object) {
+      const keys = Object.keys(inData);
+      const restoreMode = keys.includes("jd") && keys.includes("ayanamsha");
+      const { items, days, geo } = inData;
+
+      if (items instanceof Array && items.length > 0) {
+        this.items = items.map((row) => new BodySet(row));
+      }
+      if (isNumeric(days)) {
+        this.days = smartCastInt(days, 1);
+      }
+
+      if (geo instanceof Object) {
+        this.geo = new GeoLoc(geo);
+      }
+      if (restoreMode) {
+        const { jd, tz, coordSystem, topoMode, ayanamsha, placeNames } = inData;
+        this.topoMode = topoMode === true;
+        if (isNumeric(jd)) {
+          this.jd = smartCastInt(jd, 0);
+        }
+        if (isNumeric(ayanamsha)) {
+          this.ayanamsha = smartCastInt(ayanamsha, 0);
+        }
+        if (tz instanceof Object) {
+          this.tz = new TimeZoneInfo(tz);
+        }
+        if (notEmptyString(placeNames)) {
+          this.placeNames = placeNames;
+        }
+        if (isNumeric(coordSystem)) {
+          this.coordSystem = smartCastInt(coordSystem);
+        }
+      } else {
+        const { date, coordinateSystem, ayanamshas } = inData;
+
+        if (date instanceof Object) {
+          const { jd } = date;
+          if (isNumeric(jd)) {
+            this.jd = smartCastInt(jd, 0);
+          }
+        }
+        if (ayanamshas instanceof Array && ayanamshas.length > 0) {
+          if (ayanamshas[0] instanceof Object) {
+            const { value, key } = ayanamshas[0];
+            if (isNumeric(value)) {
+              this.ayanamsha = smartCastFloat(value);
+            }
+            if (notEmptyString(key)) {
+              this.ayanamshaKey = key;
+            }
+          }
+        }
+        if (notEmptyString(coordinateSystem)) {
+          const parts = coordinateSystem.toLowerCase().split("/");
+          if (parts.length > 1) {
+            this.coordSystem = toEqInt(parts[0]);
+            this.topoMode = parts[1].includes("topo");
+          }
+        }
+      }
+    }
+  }
+
+  get hasData(): boolean {
+    if (this.items.length > 0) {
+      if (this.items[0].bodies.length > 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  get bodyKeys(): string[] {
+    if (this.items.length > 0) {
+      if (this.items[0].bodies.length > 0) {
+        return this.items[0].bodies.map((b) => b.key);
+      }
+    }
+    return [];
+  }
+}
+
+/*
+ * Embellished Body class with core attributed implemented in Body above
+ */
+export class Graha extends Body {
+  lngTopo = -1;
+  latTopo = 0;
+  latSpeedEq = 0;
+  lngSpeedEq = 0;
+  rectAscension = 0;
+  declination = 0;
+  altitude = 0;
+  azimuth = 0;
+  variants: Variant[] = [];
+
+  constructor(inData: any = null) {
+    if (inData instanceof Object) {
+      super(inData);
+      Object.entries(inData).forEach(([key, val]) => {
+        if (isNumeric(val)) {
+          const flVal = smartCastFloat(val);
+          switch (key) {
+            case "latTopo":
+            case "lngTopo":
             case "latSpeedEq":
             case "lngSpeedEq":
             case "declination":
@@ -433,10 +617,6 @@ export class Graha {
     }
   }
 
-  longitude(ayanamshaOffset = 0): number {
-    return subtractLng360(this.lng, ayanamshaOffset);
-  }
-
   setTopo(lng = -1, lat = 0) {
     if (lng >= 0) {
       this.lngTopo = lng;
@@ -450,24 +630,6 @@ export class Graha {
 
   get hasVariants(): boolean {
     return this.variants.length > 0;
-  }
-
-  get isPlanet(): boolean {
-    return (
-      ["as", "ds", "su"].includes(this.key) === false && this.key.length === 2
-    );
-  }
-
-  get showLat(): boolean {
-    return this.lat !== 0 || this.isPlanet;
-  }
-
-  get showLngSpeed(): boolean {
-    return this.lngSpeed !== 0 || this.isPlanet;
-  }
-
-  get showLatSpeed(): boolean {
-    return this.latSpeed !== 0 || this.isPlanet;
   }
 
   get firstVariant(): Variant {

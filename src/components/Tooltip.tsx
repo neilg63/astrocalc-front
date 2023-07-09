@@ -1,5 +1,5 @@
-import { Popover } from "@suid/material";
-import { JSXElement, createSignal } from "solid-js";
+import { Box, Popover } from "@suid/material";
+import { For, JSXElement, Show, createSignal } from "solid-js";
 
 export default function Tooltip({ label, children }: { label: string;  children: JSXElement}) {
   const [anchorEl, setAnchorEl] = createSignal<Element | undefined>(undefined);
@@ -12,6 +12,9 @@ export default function Tooltip({ label, children }: { label: string;  children:
   };
 
   const open = () => Boolean(anchorEl());
+
+  const multiLine = label.includes(",");
+  const parts = multiLine ? label.split(",").map(s => s.trim()) : [];
 
   return <div class="tooltip-container" aria-haspopup="true"
         onMouseEnter={handlePopoverOpen}
@@ -29,7 +32,13 @@ export default function Tooltip({ label, children }: { label: string;  children:
           }}
           onClose={handlePopoverClose}
         >
-          {label}
+      <Box class="hover-content">
+        <Show when={multiLine}>
+          <For each={parts}>
+            {(line) => <p>{ line }</p>}
+          </For>
+        </Show>
+          </Box>
         </Popover>
     </div>
 }

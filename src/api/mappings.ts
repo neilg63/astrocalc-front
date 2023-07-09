@@ -1,4 +1,5 @@
 import { snakeToWords } from "./converters";
+import { KeyNumName, KeyNumValue } from "./models";
 
 export interface KeyName {
   key: string;
@@ -571,3 +572,100 @@ export const weekDayName = (num = 1, mode = "iso") => {
 };
 
 export const weekDayNameSun = (num = 1) => weekDayName(num, "sun");
+
+interface SectionModeSet {
+  section: string;
+  modes: KeyName[];
+}
+
+export const modeOptions: SectionModeSet[] = [
+  {
+    section: "transitions",
+    modes: [
+      { key: "extended", name: "Extended" },
+      { key: "sun", name: "Sun" },
+      { key: "transposed", name: "Transposed" },
+    ],
+  },
+];
+
+export const matchSectionModes = (key = ""): KeyName[] => {
+  const row = modeOptions.find((row) => row.section === key);
+  if (row instanceof Object) {
+    if (row.modes instanceof Array) {
+      return row.modes;
+    }
+  }
+  return [];
+};
+
+export const unitOptions: KeyNumName[] = [
+  {
+    key: "days",
+    name: "Days",
+    value: 1,
+  },
+  {
+    key: "year",
+    name: "Years",
+    value: 365.25,
+  },
+];
+
+export const matchUnitsBySection = (key = ""): KeyNumName[] => {
+  switch (key) {
+    case "extended":
+      return unitOptions.filter((row) => row.value < 100);
+    default:
+      return [];
+  }
+};
+
+export const eqOptions: KeyNumName[] = [
+  {
+    key: "ecliptic",
+    name: "Ecliptic",
+    value: 0,
+  },
+  {
+    key: "equatorial",
+    name: "Equatorial",
+    value: 1,
+  },
+  {
+    key: "horizontal",
+    name: "Horizontal",
+    value: 2,
+  },
+];
+
+export const toEqInt = (key: string) => {
+  switch (key) {
+    case "equatorial":
+      return 1;
+    case "horizontal":
+      return 2;
+    default:
+      return 0;
+  }
+};
+
+export const toEqKey = (value = 0) => {
+  switch (value) {
+    case 1:
+      return "equatorial";
+    case 2:
+      return "horizontal";
+    default:
+      return "ecliptic";
+  }
+};
+
+export const showEqOptions = (key = ""): boolean => {
+  switch (key) {
+    case "extended":
+      return true;
+    default:
+      return false;
+  }
+};

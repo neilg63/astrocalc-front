@@ -1,4 +1,5 @@
-import { notEmptyString } from "./utils";
+import { smartCastInt } from "./converters";
+import { isNumeric, notEmptyString } from "./utils";
 
 const matchesPattern = (str = "", pattern = "", mode = "i"): boolean => {
   const rgx = new RegExp("^" + pattern + "$", mode);
@@ -17,6 +18,15 @@ export const updateInputValue = (e: Event, func: Function, isDate = true) => {
       if (valid) {
         func(e.target.value);
       }
+    }
+  }
+};
+
+export const updateIntValue = (e: Event, func: Function) => {
+  if (e.target instanceof HTMLInputElement) {
+    const { value } = e.target;
+    if (value !== undefined && isNumeric(value)) {
+      func(smartCastInt(value, 0));
     }
   }
 };

@@ -1,9 +1,9 @@
 import { Accessor, For } from "solid-js";
 import { snakeToWords } from "~/api/converters";
 import { KeyName } from "~/api/mappings";
+import Tooltip from "./Tooltip";
 
 export default function OptionSelect({ name, label, options, value, setValue }: { name: string; label: string; options: KeyName[], value: Accessor<string>; setValue: Function }) {
-  const labelId = [name, 'selector-label'].join('-');
   const controlId = [name, 'selector'].join('-');
   const onSelect = (e: Event) => {
     if (e.target instanceof HTMLSelectElement) {
@@ -13,11 +13,13 @@ export default function OptionSelect({ name, label, options, value, setValue }: 
   const isSelected = (refKey: string): boolean => {
     return refKey === value();
   }
-  return <select id={controlId} onChange={onSelect}>
+  return <Tooltip label={label}>
+    <select id={controlId} onChange={onSelect}>
       <For each={options}>
         {(item) => <option value={item.key} selected={isSelected(item.key)}>{snakeToWords(item.name)}</option>}
       </For>
     </select>
+  </Tooltip>
 }
 
 /*

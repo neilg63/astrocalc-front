@@ -1,25 +1,25 @@
 import { Show, createEffect, createSignal } from "solid-js";
-import { fetchChartData, fetchTz } from "~/api/fetch";
+import { fetchChartData, fetchTz, fetchProgressData } from "~/api/fetch";
 import { formatDate, notEmptyString, yearsAgoDateString } from "~/api/utils";
-import { updateInputValue } from "~/api/forms";
+import { updateInputValue, updateIntValue } from "~/api/forms";
 import { decPlaces4, degAsLatStr, degAsLngStr, extractPlaceString, hrsMinsToString, smartCastInt } from "~/api/converters";
 import { fetchGeo, getGeoTzOffset } from "~/api/geoloc-utils";
-import { AstroChart, GeoLoc, GeoName, TimeZoneInfo, latLngToLocString } from "~/api/models";
+import { AstroChart, GeoLoc, GeoName, ProgressSet, TimeZoneInfo, latLngToLocString } from "~/api/models";
 import { currentJulianDate, dateStringToJulianDate, julToDateParts, localDateStringToJulianDate } from "~/api/julian-date";
 import ChartData from "./ChartaData";
 import { fromLocal, toLocal } from "~/lib/localstore";
 import AyanamashaSelect from "./AyanamshaSelect";
 import OptionSelect from "./OptionSelect";
-import { houseSystems } from "~/api/mappings";
+import { eqOptions, houseSystems, matchUnitsBySection, showEqOptions, toEqInt, toEqKey } from "~/api/mappings";
 import { Icon, IconButton } from "@suid/material";
 import DmsInput from "./DmsInput";
 import PlaceNameSelector from "./PlaceNameSelector";
 import Tooltip from "./Tooltip";
 import IconTrigger from "./IconTrigger";
 import TabSelector from "./TabSelector";
-import { Switch } from "@suid/material";
 import ButtonIconTrigger from "./ButtonIconTrigger";
 import SlideToggle from "./SlideToggle";
+import ProgressTable from "./ProgressTable";
 
 interface LocDt {
   dt: string;
@@ -60,20 +60,27 @@ export default function ControlPanel() {
   const [init, setInit] = createSignal(false);
   const [lat, setLat] = createSignal(0)
   const [lng, setLng] = createSignal(0);
+  const [numUnits, setNumUnits] = createSignal(20);
+  const [frequency, setFrequency] = createSignal(2);
   const [tzOffset, setTzOffset] = createSignal(0);
   const [applyAya, setApplyAya] = createSignal(true);
   const [ayaKey, setAyaKey] = createSignal("tc");
   const [hsys, setHsys] = createSignal("W");
+  const [eq, setEq] = createSignal('ecliptic');
+  const [topo, setTopo] = createSignal(false);
+  const [unitType, setUnitType] = createSignal("days")
   const { dateTime, timeZone } = buildDateTimeStrings();
   const [currDateString, setCurrDateString] = createSignal(dateTime)
   const [currTimeZone, setCurrTimeZone] = createSignal(timeZone);
   const [localPlaceName, setLocalPlaceName] = createSignal('N/A')
   const [localZoneAbbr, setLocalZoneAbbr] = createSignal('')
   const [pane, setPane] = createSignal('core')
+  const [mode, setMode] = createSignal('standard');
   
   // const [json, setJson] = createSignal('')
   
   const [chart, setChart] = createSignal(new AstroChart());
+  const [progressSet, setProgressSet] = createSignal(new ProgressSet());
   const [showData, setShowData] = createSignal(false);
 
   const extractDtLoc = (): LocDt => {
@@ -87,6 +94,8 @@ export default function ControlPanel() {
     const dt = [dateString(), timeString()].join('T');
     return dateStringToJulianDate(dt, 0 - tzOffset()).toISOSimple();
   }
+
+  
 
   const fetchChart = (daysOffset = 0) => {
     const { loc, jd } = extractDtLoc();
@@ -114,11 +123,43 @@ export default function ControlPanel() {
   const fetchChartPrev = () => {
     fetchChart(-1);
   }
+
+   const fetchProgress = () => {
+    const { loc, jd } = extractDtLoc();
+    const days = numUnits();
+     const pd = frequency();
+     const eqVal = toEqInt(eq());
+     const tc = applyAya() === true ? ayaKey() : '';
+    setShowData(false);
+    fetchProgressData({ jd, loc, aya: ayaKey(), days, pd, eq: eqVal, topo: topo() === true, tc }).then((data: any) => {
+      if (data instanceof Object && data.date.jd > 0) {
+        const progData = new ProgressSet(data, tz(), placeString());
+        setProgressSet(progData);
+        setShowData(progData.hasData);
+        setShowData(true);
+        toLocal("progress-set", progData);
+      }
+    });
+  }
+
+  const fetchData = () => {
+    switch (pane()) {
+      case "core":
+        fetchChart(0);
+        break;
+      case "extended":
+        fetchProgress();
+        break;
+    }
+  }
+
   const openChart = () => setShowData(true);
   const updateDate = (e: Event) => updateInputValue(e, setDateString, true);
   const updateTime = (e: Event) => updateInputValue(e, setTimeString, false);
   const updateEndDate = (e: Event) => updateInputValue(e, setEndDateString, true);
   const updateEndTime = (e: Event) => updateInputValue(e, setEndTimeString, false);
+  const updateUnits = (e: Event) => updateIntValue(e, setNumUnits);
+  const updateFrequency = (e: Event) => updateIntValue(e, setFrequency);
   const updateOffset = (e: Event, minuteMode = false) => {
     let hrs = offsetHrs();
     let mins = offsetMins();
@@ -142,6 +183,10 @@ export default function ControlPanel() {
     setOffsetHrs(hrs);
     setOffsetMins(mins);
     setTzOffset(secsOffset);
+  }
+
+  const updateTopo = () => {
+    setTopo(topo() !== true)
   }
 
   const updateGeoTz = (addPlaceNames = false) => {
@@ -181,6 +226,7 @@ export default function ControlPanel() {
     if (matched) {
       switch (key) {
         case 'core':
+        case 'extended':
           return showData();
         default:
           return true;
@@ -254,6 +300,23 @@ export default function ControlPanel() {
     }, 375);
   }
 
+  const syncProgressSet = () => {
+    const stored = fromLocal('progress-set', 24 * 60 * 60);
+    setShowData(false);
+    if (stored.data instanceof Object) {
+      const { jd, items } = stored.data;
+      if (items instanceof Array && jd > 0) {
+        const pSet = new ProgressSet(stored.data);
+        setProgressSet(pSet);
+        setTimeout(() => {
+          setShowData(pSet.hasData);
+        }, 500);
+        setEq(toEqKey(pSet.coordSystem));
+        setTopo(pSet.topoMode);
+      }
+    }
+  }
+
   const resetTime = () => {
     const jdObj = currentJulianDate();
     const parts = jdObj.toISOSimple().split("T");
@@ -274,10 +337,20 @@ export default function ControlPanel() {
 
   const showEndDatetIme = () => {
     switch (pane()) {
+      case "transitions":
+        return mode() === "transposed";
+      default:
+        return false;
+    }
+  }
+
+  const showDaysSpan = () => {
+    switch (pane()) {
       case "stations":
       case "extended":
-      case "transitions":
         return true;
+      case "transitions":
+        return mode() !== "transposed";
       default:
         return false;
     }
@@ -302,6 +375,19 @@ export default function ControlPanel() {
     }
   }
 
+  const showNextPrev = () => {
+    switch (pane()) {
+      case "core":
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  const showExtraAstroOptions = () => {
+    return showEqOptions(pane())
+  }
+
   const syncCoreDateTime = () => {
     const stDateInfo = fromLocal('core-jd', 12 * 60 * 60);
     if (stDateInfo.data instanceof Object) {
@@ -321,7 +407,11 @@ export default function ControlPanel() {
       case 'core':
         syncCoreDateTime();
         break;
+      case 'extended':
+        syncProgressSet();
+        break;
     }
+    toLocal('pane', key);
   }
 
   createEffect(() => {
@@ -411,15 +501,22 @@ export default function ControlPanel() {
         <div class="date-time-bar flex flex-row">
           <input type="date" value={dateString()} size="12" onChange={(e) => updateDate(e)} />
           <input type="time" value={timeString()} size="12" onChange={(e) => updateTime(e)} />
-          <div class="tz-offset-control">
-            <input type="number" class="hours" value={offsetHrs()} size="1" onChange={(e) => updateOffset(e, false)} step="1" min="-15" max="15" />
-            <input type="number" class="minutes" value={offsetMins()} size="1" onChange={(e) => updateOffset(e, true)} step="1" min="0" max="59" />
-          </div>
+          <Tooltip label="Time zone offset from UTC in hours and minutes">
+            <input type="number" class="numeric hours" value={offsetHrs()} size="1" onChange={(e) => updateOffset(e, false)} step="1" min="-15" max="15" />
+            <input type="number" class="numeric minutes" value={offsetMins()} size="1" onChange={(e) => updateOffset(e, true)} step="1" min="0" max="59" />
+          </Tooltip>
           <IconTrigger icon="today" color="info" label="Set to current date and time" onClick={() => resetTime()} />
-          <IconTrigger icon="query_builder" color="info" label="Check time offset" onClick={() => updateGeoTz()} />
+            <IconTrigger icon="query_builder" color="info" label="Check time offset" onClick={() => updateGeoTz()} />
+            <Show when={showDaysSpan()}>
+              <Tooltip label="Span in days with number per day">
+                <input type="number" value={numUnits()} min="1" max="366" onChange={(e) => updateUnits(e)} class="numeric num-days" />
+                <OptionSelect name="unit" label="Unit" options={matchUnitsBySection(pane())} value={unitType} setValue={setUnitType} />
+                <input type="number" value={frequency()} min="1" max="24" onChange={(e) => updateFrequency(e)} class="numeric frequency" />
+              </Tooltip>
+          </Show>
           <Show when={showEndDatetIme()}>
             <input type="date" value={endDateString()} size="12" onChange={(e) => updateEndDate(e)} />
-            <input type="time" value={endTimeString()} size="12" onChange={(e) => updateEndTime(e)} />
+              <input type="time" value={endTimeString()} size="12" onChange={(e) => updateEndTime(e)} />
           </Show>
         </div>
         <div class="location-bar flex flex-row">
@@ -439,11 +536,15 @@ export default function ControlPanel() {
               <SlideToggle offName="tropical" onName="sidereal" isOn={applyAya} onChange={updateApplyAya} key="sidereal-toggle" />
             <AyanamashaSelect value={ayaKey()} onSelect={(e: Event) => selectAyaOpt(e)} />
           </Show>
-          <Show when={showHouseSelector()}><OptionSelect name="hsys" label="House system" options={houseSystems}  value={hsys} setValue={setHsys} /></Show>
+            <Show when={showHouseSelector()}><OptionSelect name="hsys" label="House system" options={houseSystems} value={hsys} setValue={setHsys} /></Show>
+            <Show when={showExtraAstroOptions()}>
+              <OptionSelect name="hsys" label="Coordinate system" options={eqOptions} value={eq} setValue={setEq} />
+              <SlideToggle offName="geocentric" onName="topocentric" isOn={topo} onChange={updateTopo} key="topo-toggle" />
+            </Show>
         </div>
         <div class="actions flex flex-column">
-            <ButtonIconTrigger name="Calculate" color="success" onClick={fetchChart} label="Calculate planetary positions, transitions and special degrees" key="submit" size="large" icon="calculate" />
-            <div class="flex flex-row">
+            <ButtonIconTrigger name="Calculate" color="success" onClick={fetchData} label="Calculate planetary positions, transitions and special degrees" key="submit" size="large" icon="calculate" />
+            <div class="flex flex-row next-prev">
               <IconTrigger label="Previous day" color="success" icon="arrow_back" onClick={fetchChartPrev} />
               <IconTrigger label="Next day" color="success" icon="arrow_forward" onClick={fetchChartNext} />
             </div>
@@ -465,7 +566,7 @@ export default function ControlPanel() {
       </header>
       <div class="results-pane">
         <Show when={showPane('core')}><ChartData data={chart()} applyAya={applyAya()} /></Show>
-        <Show when={showPane('extended')}><div class="extended">To do: Extended positions </div></Show>
+        <Show when={showPane('extended')}><div class="extended"><ProgressTable data={progressSet()} /></div></Show>
         <Show when={showPane('transitions')}><div class="transitions">To do: Extended transitions </div></Show>
         <Show when={showPane('stations')}><div class="stations">To do: Planetary motions </div></Show>
       </div>
