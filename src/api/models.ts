@@ -1,5 +1,6 @@
 import {
   camelToTitle,
+  decPlaces6,
   smartCastFloat,
   smartCastInt,
   snakeToWords,
@@ -479,6 +480,8 @@ export class ProgressSet {
 
   items: BodySet[] = [];
 
+  private overrideAya = false;
+
   constructor(inData: any = null, tz: any = null, placeString = "") {
     if (tz instanceof Object) {
       this.tz = new TimeZoneInfo(tz);
@@ -502,13 +505,24 @@ export class ProgressSet {
         this.geo = new GeoLoc(geo);
       }
       if (restoreMode) {
-        const { jd, tz, coordSystem, topoMode, ayanamsha, placeNames } = inData;
+        const {
+          jd,
+          tz,
+          coordSystem,
+          topoMode,
+          ayanamsha,
+          ayanamshaKey,
+          placeNames,
+        } = inData;
         this.topoMode = topoMode === true;
         if (isNumeric(jd)) {
           this.jd = smartCastInt(jd, 0);
         }
         if (isNumeric(ayanamsha)) {
-          this.ayanamsha = smartCastInt(ayanamsha, 0);
+          this.ayanamsha = smartCastFloat(ayanamsha, 0);
+        }
+        if (notEmptyString(ayanamshaKey)) {
+          this.ayanamshaKey = ayanamshaKey;
         }
         if (tz instanceof Object) {
           this.tz = new TimeZoneInfo(tz);
@@ -549,7 +563,6 @@ export class ProgressSet {
       }
     }
   }
-
   get hasData(): boolean {
     if (this.items.length > 0) {
       if (this.items[0].bodies.length > 0) {
@@ -580,6 +593,38 @@ export class ProgressSet {
   get multiple(): number {
     const num = this.numRows;
     return num > 0 && this.days > 0 ? Math.round(this.days / num) : 0;
+  }
+
+  get hasAyanamsha(): boolean {
+    return this.ayanamsha > 0 && this.coordSystem < 1;
+  }
+
+  get ayaApplied(): boolean {
+    return this.hasAyanamsha && !this.overrideAya;
+  }
+
+  get tropicalOffset(): number {
+    if (this.hasAyanamsha) {
+      return 0 - this.ayanamsha;
+    } else {
+      return 0;
+    }
+  }
+
+  get contextualOffset(): number {
+    return this.ayaApplied ? 0 : this.hasAyanamsha ? 0 - this.ayanamsha : 0;
+  }
+
+  applyOverride(newState = true) {
+    this.overrideAya = newState === true;
+  }
+
+  get appliedAyanamshaLabel(): string {
+    return this.ayaApplied
+      ? [snakeToWords(this.ayanamshaKey), decPlaces6(this.ayanamsha)].join(
+          " ➡︎ "
+        )
+      : "tropical";
   }
 }
 

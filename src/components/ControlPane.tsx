@@ -238,10 +238,22 @@ export default function ControlPanel() {
 
   const updateApplyAya = () => {
     setShowData(false);
-    setApplyAya(!applyAya());
+    const newVal = applyAya() !== true;
+    setApplyAya(newVal);
+    if (pane() === 'extended') {
+      progressSet().applyOverride(!newVal);
+    }
     setTimeout(() => {
       setShowData(true);
     }, 250)
+  }
+
+  const updateEq = (eq = '') => {
+    if (notEmptyString(eq)) {
+      setShowData(false);
+      setEq(eq);
+      fetchProgress();
+    }
   }
 
   const syncLatLng = (lat: number, lng: number) => {
@@ -553,7 +565,7 @@ export default function ControlPanel() {
           </Show>
             <Show when={showHouseSelector()}><OptionSelect name="hsys" label="House system" options={houseSystems} value={hsys} setValue={setHsys} /></Show>
             <Show when={showExtraAstroOptions()}>
-              <OptionSelect name="hsys" label="Coordinate system" options={eqOptions} value={eq} setValue={setEq} />
+              <OptionSelect name="hsys" label="Coordinate system" options={eqOptions} value={eq} setValue={updateEq} />
               <SlideToggle offName="geocentric" onName="topocentric" isOn={topo} onChange={updateTopo} key="topo-toggle" />
             </Show>
         </div>

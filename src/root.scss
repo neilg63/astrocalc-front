@@ -103,6 +103,9 @@ body {
 main {
   table {
     width: 100%;
+    caption {
+      text-align: center;
+    }
     thead {
       th {
         font-size: 0.8em;
@@ -247,6 +250,25 @@ dl {
         pointer-events: none;
       }
     }
+  }
+}
+
+dl.row {
+  align-items: center;
+  dt {
+    font-weight: bold;
+    margin-right: 0.5em;
+  }
+  dd {
+    font-weight: normal;
+    margin-right: 1.5em;
+  }
+}
+
+caption dl.row {
+  dt {
+    color: $primary-blue;
+    font-size: 0.75em;
   }
 }
 
