@@ -154,6 +154,20 @@ main {
   .results-pane {
     margin: 2.5rem auto 2rem auto;
   }
+
+  .tooltip-container {
+    time, span {
+      display: inline-block;
+    }
+    time {
+      &.date {
+        margin-right: 0.5em;
+      }
+      &.seconds {
+        font-size: 0.75em;
+      }
+    }
+  }
 }
 
 .page-wrapper > header,
@@ -484,6 +498,8 @@ main {
     
   }
   > .flex {
+    select,
+    .tooltip-container > input,
     > input {
       border-top: none;
       border-left: none;

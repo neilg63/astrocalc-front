@@ -5,6 +5,7 @@ import { Body, BodySet, ProgressSet } from "~/api/models";
 import DegreeTip from "./DegreeTip";
 import IconTrigger from "./IconTrigger";
 import { julToDateParts } from "~/api/julian-date";
+import DateTimeTip from "./DateTimeTip";
 
 
 export default function ProgressTable({ data }: {data: ProgressSet}) {
@@ -12,8 +13,6 @@ export default function ProgressTable({ data }: {data: ProgressSet}) {
   const bodyKeys = data.bodyKeys;
   const numCols = bodyKeys.length + 1;
   const ayaApplied = data.ayaApplied;
-
-  const toDateTime = (jd = 0): string => julToLongDate(jd, data.tz.utcOffset);
 
   const latLabel = () => {
     switch (data.coordSystem) {
@@ -104,7 +103,7 @@ export default function ProgressTable({ data }: {data: ProgressSet}) {
       <tbody>
       <For each={data.items}>
           {(item, ri) => <tr class={toRowClasses(ri())}>
-            <td class="datetime">{ toDateTime(item.jd) }</td>
+            <td class="datetime"><DateTimeTip jd={ item.jd} utcOffset={data.tz.utcOffset} /></td>
             <For each={item.bodies}>
               {(body, bi) => <td class={toBodyClasses(body, bi())}>
                 <DegreeTip label={buildBodyLabel(body)} degree={body.longitude(data.contextualOffset)} />

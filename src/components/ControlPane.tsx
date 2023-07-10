@@ -92,7 +92,7 @@ export default function ControlPanel() {
 
   const utcDateString = () => {
     const dt = [dateString(), timeString()].join('T');
-    return dateStringToJulianDate(dt, 0 - tzOffset()).toISOSimple();
+    return dateStringToJulianDate(dt, 0 - tzOffset()).toString();
   }
 
   

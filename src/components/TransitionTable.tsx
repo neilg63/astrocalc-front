@@ -4,9 +4,9 @@ import { TransitionSet } from "~/api/models";
 import { matchNameByGrahaKey } from "~/api/mappings";
 import IconTrigger from "./IconTrigger";
 import Tooltip from "./Tooltip";
+import DateTimeTip from "./DateTimeTip";
 
 export default function TransitionTable({ transitions, tzOffset }: { transitions: TransitionSet[]; tzOffset: number }) {
-  const toDateTime = (jd = 0): string => julToLongDate(jd, tzOffset);
   const toISODateTime = (jd = 0): string => julToISODate(jd, tzOffset,true);
   const toTabGrid = () => {
     const rows = transitions.map(row => {
@@ -39,14 +39,14 @@ export default function TransitionTable({ transitions, tzOffset }: { transitions
         {(item) => <tr class={item.key}>
           <td class="key">{ matchNameByGrahaKey(item.key) }</td>
           <td class="prev-set">
-            <Show when={item.hasPrevSet}>{toDateTime(item.prevSet)}</Show>
+            <Show when={item.hasPrevSet}><DateTimeTip jd={ item.prevSet } utcOffset={tzOffset} /></Show>
           </td>
-          <td class="rise">{toDateTime(item.rise)}</td>
-          <td class="mc">{toDateTime(item.mc)}</td>
-          <td class="set">{toDateTime(item.set)}</td>
-          <td class="ic">{toDateTime(item.ic)}</td>
+          <td class="rise"><DateTimeTip jd={ item.rise} utcOffset={tzOffset} /></td>
+          <td class="mc"><DateTimeTip jd={ item.mc} utcOffset={tzOffset} /></td>
+          <td class="set"><DateTimeTip jd={ item.set} utcOffset={tzOffset} /></td>
+          <td class="ic"><DateTimeTip jd={ item.ic} utcOffset={tzOffset} /></td>
           <td class="next-rise">
-            <Show when={item.hasNextRise}>{toDateTime(item.nextRise)}</Show>
+            <Show when={item.hasNextRise}><DateTimeTip jd={ item.nextRise} utcOffset={tzOffset} /></Show>
           </td>
           <td class="numeric min">
             <Show when={item.hasMinMax}>
