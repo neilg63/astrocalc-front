@@ -124,19 +124,29 @@ export default function ControlPanel() {
     fetchChart(-1);
   }
 
+  const applyProgressSet = (progData: ProgressSet) => {
+    if (applyAya() !== true) {
+       progData.applyOverride(true);
+    }
+    setTimeout(() => {
+      setProgressSet(progData);
+    }, 125);
+    setTimeout(() => {
+      setShowData(progData.hasData);
+    }, 250);
+  }
+
    const fetchProgress = () => {
     const { loc, jd } = extractDtLoc();
     const days = numUnits();
      const pd = frequency();
      const eqVal = toEqInt(eq());
-     const tc = applyAya() === true ? ayaKey() : '';
+     const tc = ayaKey();
     setShowData(false);
     fetchProgressData({ jd, loc, aya: ayaKey(), days, pd, eq: eqVal, topo: topo() === true, tc }).then((data: any) => {
       if (data instanceof Object && data.date.jd > 0) {
         const progData = new ProgressSet(data, tz(), placeString());
-        setProgressSet(progData);
-        setShowData(progData.hasData);
-        setShowData(true);
+        applyProgressSet(progData);
         toLocal("progress-set", progData);
       }
     });
@@ -319,7 +329,6 @@ export default function ControlPanel() {
       const { jd, items } = stored.data;
       if (items instanceof Array && jd > 0) {
         const pSet = new ProgressSet(stored.data);
-        setProgressSet(pSet);
         setTimeout(() => {
           setShowData(pSet.hasData);
         }, 500);
@@ -329,6 +338,8 @@ export default function ControlPanel() {
           setNumUnits(pSet.days);
           setFrequency(pSet.perDay);
         }
+        applyProgressSet(pSet);
+        updateDateTimeControls(pSet.jd, pSet.tz.utcOffset);
       }
     }
   }
@@ -404,15 +415,21 @@ export default function ControlPanel() {
     return showEqOptions(pane())
   }
 
+  const updateDateTimeControls = (jd = 0, tzOffset = 0) => {
+    if (jd > 0) {
+      const dtParts = julToDateParts(jd, tzOffset).toISOSimple().split("T");
+      setDateString(dtParts[0]);
+      setTimeString(dtParts[1]);
+      setTzOffset(tzOffset);
+    }
+  }
+
   const syncCoreDateTime = () => {
     const stDateInfo = fromLocal('core-jd', 12 * 60 * 60);
     if (stDateInfo.data instanceof Object) {
       const { jd, tz } = stDateInfo.data;
       if (tz instanceof Object) {
-        const dtParts = julToDateParts(jd, tz.utcOffset).toISOSimple().split("T");
-        setDateString(dtParts[0]);
-        setTimeString(dtParts[1]);
-        setTzOffset(tz.utcOffset);
+        updateDateTimeControls(jd, tz.utcOffset);
       }
     }
   }

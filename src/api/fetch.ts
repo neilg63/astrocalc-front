@@ -75,10 +75,11 @@ export const fetchProgressData = async (params: ParamSet): Promise<any> => {
   const method = `progress`;
   const filter: Map<string, any> = new Map(Object.entries(params));
   filter.set("sid", 0);
-  if (filter.has("tc")) {
-    const tc = filter.get("tc");
-    if (notEmptyString(tc) && tc.length === 2 && tc !== "--") {
+  if (filter.has("aya")) {
+    const aya = filter.get("aya");
+    if (notEmptyString(aya) && aya.length === 2 && aya !== "--") {
       filter.set("sid", 1);
+      filter.set("aya", aya);
     }
   }
   if (filter.has("topo")) {

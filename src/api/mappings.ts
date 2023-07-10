@@ -631,12 +631,12 @@ export const eqOptions: KeyNumName[] = [
     key: "equatorial",
     name: "Equatorial",
     value: 1,
-  } /* 
+  },
   {
     key: "horizontal",
     name: "Horizontal",
-    value: 2,
-  }, */,
+    value: 3,
+  },
 ];
 
 export const toEqInt = (key: string) => {
@@ -644,7 +644,7 @@ export const toEqInt = (key: string) => {
     case "equatorial":
       return 1;
     case "horizontal":
-      return 2;
+      return 3;
     default:
       return 0;
   }
@@ -654,15 +654,15 @@ export const toEqKey = (value = 0) => {
   switch (value) {
     case 1:
       return "equatorial";
-    case 2:
+    case 3:
       return "horizontal";
     default:
       return "ecliptic";
   }
 };
 
-export const toTopoKey = (topoMode = false) => {
-  return topoMode ? "topocentric" : "geocentric";
+export const toTopoKey = (value = false) => {
+  return value ? "topocentric" : "geocentric";
 };
 
 export const showEqOptions = (key = ""): boolean => {
