@@ -10,7 +10,7 @@ import ChartData from "./ChartaData";
 import { fromLocal, toLocal } from "~/lib/localstore";
 import AyanamashaSelect from "./AyanamshaSelect";
 import OptionSelect from "./OptionSelect";
-import { eqOptions, houseSystems, matchUnitsBySection, showEqOptions, toEqInt, toEqKey } from "~/api/mappings";
+import { eqOptions, houseSystems, matchUnitsBySection, showEqOptions, toEqInt, toEqKey, unitKeyToDays, unitKeyToObject } from "~/api/mappings";
 import { Icon, IconButton } from "@suid/material";
 import DmsInput from "./DmsInput";
 import PlaceNameSelector from "./PlaceNameSelector";
@@ -58,7 +58,7 @@ export default function ControlPanel() {
   const [defLat, setDefLat] = createSignal(0);
   const [defLng, setDefLng] = createSignal(0);
   const [init, setInit] = createSignal(false);
-  const [lat, setLat] = createSignal(0)
+  const [lat, setLat] = createSignal(0);
   const [lng, setLng] = createSignal(0);
   const [numUnits, setNumUnits] = createSignal(20);
   const [frequency, setFrequency] = createSignal(2);
@@ -68,7 +68,7 @@ export default function ControlPanel() {
   const [hsys, setHsys] = createSignal("W");
   const [eq, setEq] = createSignal('ecliptic');
   const [topo, setTopo] = createSignal(false);
-  const [unitType, setUnitType] = createSignal("days")
+  const [unitType, setUnitType] = createSignal("day");
   const { dateTime, timeZone } = buildDateTimeStrings();
   const [currDateString, setCurrDateString] = createSignal(dateTime)
   const [currTimeZone, setCurrTimeZone] = createSignal(timeZone);
@@ -137,15 +137,23 @@ export default function ControlPanel() {
   }
 
    const fetchProgress = () => {
-    const { loc, jd } = extractDtLoc();
-    const days = numUnits();
-     const pd = frequency();
+     const { loc, jd } = extractDtLoc();
+     const numUnitsVal = numUnits() > 0 ? smartCastInt(numUnits()) : 1;
+     const dspanVal = unitKeyToDays(unitType());
+     const days = Math.ceil(numUnitsVal * dspanVal);
+     const freqVal = smartCastInt(frequency(), 1);
+     const pdVal = freqVal > 1 ? freqVal : 1;
+     const remainder = dspanVal % 1;
+     const multiplier = remainder > 0.03 ? 1 / remainder : 1;
+     const dspan = Math.ceil(dspanVal  * multiplier);
+     const pd = Math.ceil(pdVal* multiplier);
      const eqVal = toEqInt(eq());
      const tc = ayaKey();
     setShowData(false);
-    fetchProgressData({ jd, loc, aya: ayaKey(), days, pd, eq: eqVal, topo: topo() === true, tc }).then((data: any) => {
+    fetchProgressData({ jd, loc, aya: ayaKey(), days, dspan, pd, eq: eqVal, topo: topo() === true, tc }).then((data: any) => {
       if (data instanceof Object && data.date.jd > 0) {
-        const progData = new ProgressSet(data, tz(), placeString());
+        const pData = { ...data, perUnit: pdVal };
+        const progData = new ProgressSet(pData, tz(), placeString());
         applyProgressSet(progData);
         toLocal("progress-set", progData);
       }
@@ -322,6 +330,42 @@ export default function ControlPanel() {
     }, 375);
   }
 
+  const retrieveChartData = () => {
+    const cData = fromLocal("current-chart", 7 * 24 * 3600);
+    const data = cData.valid ? cData.data : null;
+    const exists = data instanceof Object;
+    return { exists, data };
+  }
+
+/*   const syncDateTime = (jd = 0) => {
+    if (jd > 0) {
+      const dateObj = julToDateParts(chart.jd, tz().utcOffset);
+      const ps = dateObj.toISOSimple().split('T');
+      setDateString(ps[0]);
+      setTimeString(ps[1]);
+    }
+  } */
+
+  const updateFromChart = (data: any = null) => {
+    const chart = new AstroChart(data);
+    if (chart.bodies.length > 0) {
+      setChart(chart);
+      syncLatLng(chart.geo.lat, chart.geo.lng);
+      setTimeout(openChart, 500);
+      updateDateTimeControls(chart.jd, chart.tz.utcOffset);
+      if (chart.hasPlaceName) {
+        setPlaceString(chart.placeName);
+      }
+    }
+  }
+
+  const syncChart = () => {
+    const storedChart = retrieveChartData();
+    if (storedChart.exists) {
+      updateFromChart(storedChart.data);
+    }
+  }
+
   const syncProgressSet = () => {
     const stored = fromLocal('progress-set', 24 * 60 * 60);
     setShowData(false);
@@ -338,7 +382,13 @@ export default function ControlPanel() {
           setNumUnits(pSet.days);
           setFrequency(pSet.perDay);
         }
+        setUnitType(pSet.unit);
+        setNumUnits(pSet.numUnits);
+        setFrequency(pSet.perUnit);
         applyProgressSet(pSet);
+        setPlaceString(pSet.placeNames);
+        const { lat, lng } = pSet.geo;
+        syncLatLng(lat, lng);
         updateDateTimeControls(pSet.jd, pSet.tz.utcOffset);
       }
     }
@@ -420,7 +470,7 @@ export default function ControlPanel() {
       const dtParts = julToDateParts(jd, tzOffset).toISOSimple().split("T");
       setDateString(dtParts[0]);
       setTimeString(dtParts[1]);
-      setTzOffset(tzOffset);
+      updateTimeOffset(tzOffset);
     }
   }
 
@@ -438,7 +488,8 @@ export default function ControlPanel() {
     setPane(key);
     switch (key) {
       case 'core':
-        syncCoreDateTime();
+        // syncCoreDateTime();
+        syncChart();
         break;
       case 'extended':
         syncProgressSet();
@@ -458,17 +509,18 @@ export default function ControlPanel() {
     return cls.join(" ");
   }
 
+  const daySpanHint = (): string => {
+    return `Span in the defined unit with the frequency in that period`;
+  }
+
   createEffect(() => {
     syncLocalGeo(true);
     if (!init()) {
       const secsOffset = getGeoTzOffset();
       updateTimeOffset(secsOffset);
-      const cData = fromLocal("current-chart", 7 * 24 * 3600);
       const geoData = fromLocal("geoname", 7 * 24 * 3600);
       const tzData = fromLocal("current-tz", 24 * 3600);
-      
-      let chartData = cData.valid ? cData.data : null;
-      const hasData = chartData instanceof Object;
+      const chartStore = retrieveChartData();
       const tzObj = tzData.valid ? tzData.data : null;
       let tzInfo = new TimeZoneInfo(tzObj);
       if (tzInfo.valid) {
@@ -481,24 +533,14 @@ export default function ControlPanel() {
       if (geoData.valid) {
         const { lat, lng, name } = geoData.data;
         if (notEmptyString(name)) {
-          if (!hasData) {
+          if (!chartStore.exists) {
             syncLatLng(lat, lng);
           }
           setPlaceString(name);
         }
       }
-      if (hasData) {
-        const chart = new AstroChart(chartData);
-        setChart(chart);
-        syncLatLng(chart.geo.lat, chart.geo.lng);
-        setTimeout(openChart, 500);
-        const dateObj = julToDateParts(chart.jd, tz().utcOffset);
-        const ps = dateObj.toISOSimple().split('T');
-        setDateString(ps[0]);
-        setTimeString(ps[1]);
-        if (chart.hasPlaceName) {
-          setPlaceString(chart.placeName);
-        }
+      if (chartStore.exists) {
+        updateFromChart(chartStore.data);
       }
 
       setTimeout(() => {
@@ -552,7 +594,7 @@ export default function ControlPanel() {
           <IconTrigger icon="today" color="info" label="Set to current date and time" onClick={() => resetTime()} />
             <IconTrigger icon="query_builder" color="info" label="Check time offset" onClick={() => updateGeoTz()} />
             <Show when={showDaysSpan()}>
-              <Tooltip label="Span in days with number per day" single={true}>
+              <Tooltip label={daySpanHint()} single={false}>
                 <input type="number" value={numUnits()} min="1" max="366" onChange={(e) => updateUnits(e)} class="numeric num-days" />
                 <OptionSelect name="unit" label="Unit" options={matchUnitsBySection(pane())} value={unitType} setValue={setUnitType} />
                 <input type="number" value={frequency()} min="1" max="24" onChange={(e) => updateFrequency(e)} class="numeric frequency" />

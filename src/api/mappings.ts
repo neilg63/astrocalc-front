@@ -601,9 +601,24 @@ export const matchSectionModes = (key = ""): KeyName[] => {
 
 export const unitOptions: KeyNumName[] = [
   {
-    key: "days",
+    key: "day",
     name: "Days",
     value: 1,
+  },
+  {
+    key: "week",
+    name: "Weeks",
+    value: 7,
+  },
+  {
+    key: "moon",
+    name: "Lunar month",
+    value: 28,
+  },
+  {
+    key: "quarter",
+    name: "Quarters",
+    value: 92,
   },
   {
     key: "year",
@@ -612,9 +627,40 @@ export const unitOptions: KeyNumName[] = [
   },
 ];
 
+export const unitKeyToObject = (key = ""): KeyNumName => {
+  const row = unitOptions.find((r) => r.key === key);
+  if (row instanceof Object) {
+    return row;
+  } else {
+    return { key: "", name: "", value: 0 };
+  }
+};
+
+export const matchUnitKeyByValue = (value = 0): string => {
+  const minVal = value * 0.9;
+  const maxVal = value * 1.1;
+  const row = unitOptions.find((r) => r.value > minVal && r.value < maxVal);
+  if (row instanceof Object) {
+    return row.key;
+  } else {
+    return "";
+  }
+};
+
+export const unitKeyToDays = (key = ""): number => {
+  const row = unitKeyToObject(key);
+  if (row.value > 0) {
+    return row.value;
+  } else {
+    return 1;
+  }
+};
+
 export const matchUnitsBySection = (key = ""): KeyNumName[] => {
   switch (key) {
     case "extended":
+      return unitOptions;
+    case "transitions":
       return unitOptions.filter((row) => row.value < 100);
     default:
       return [];

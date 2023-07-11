@@ -56,7 +56,7 @@ export default function ProgressTable({ data }: {data: ProgressSet}) {
   }
 
   const toBodyClasses = (body: Body, index = 0) => {
-    return [body.key, index % 2 === 0 ? 'odd' : 'even'].join(' ');
+    return ['lng', body.key, index % 2 === 0 ? 'odd' : 'even'].join(' ');
   }
 
   const toRowClasses = (index = 0) => {
@@ -79,9 +79,14 @@ export default function ProgressTable({ data }: {data: ProgressSet}) {
     const grid = toTabGrid();
     navigator.clipboard.writeText(grid);
   }
-  
+
+  const cls = ["progress-data"];
+  if (ayaApplied) {
+    cls.push('sidereal-mode');
+  }
+  const wrapperClasses = cls.join(' ');
   return <Show when={hasData}>
-    <table class="progress-data">
+    <table class={wrapperClasses}>
       <caption>
         <dl class="flex row">
           <dt>Coordinate system</dt>

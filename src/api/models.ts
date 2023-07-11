@@ -7,7 +7,7 @@ import {
   subtractLng360,
   zeroPad,
 } from "./converters";
-import { toEqInt } from "./mappings";
+import { matchUnitKeyByValue, toEqInt } from "./mappings";
 import { isNumeric, notEmptyString } from "./utils";
 
 export interface KeyNumValue {
@@ -464,6 +464,8 @@ export class ProgressSet {
 
   days = 0;
 
+  perUnit = 1;
+
   tz = new TimeZoneInfo(); // local time zone info at the referenced time and place
 
   ayanamsha = 0;
@@ -492,13 +494,16 @@ export class ProgressSet {
     if (inData instanceof Object) {
       const keys = Object.keys(inData);
       const restoreMode = keys.includes("jd") && keys.includes("ayanamsha");
-      const { items, days, geo } = inData;
+      const { items, days, geo, perUnit } = inData;
 
       if (items instanceof Array && items.length > 0) {
         this.items = items.map((row) => new BodySet(row));
       }
       if (isNumeric(days)) {
         this.days = smartCastInt(days, 1);
+      }
+      if (isNumeric(perUnit)) {
+        this.perUnit = smartCastInt(perUnit, 1);
       }
 
       if (geo instanceof Object) {
@@ -588,6 +593,18 @@ export class ProgressSet {
   get perDay(): number {
     const num = this.numRows;
     return num > 0 && this.days > 0 ? Math.round(num / this.days) : 0;
+  }
+
+  get unitSpan(): number {
+    return (this.days / this.numRows) * this.perUnit;
+  }
+
+  get numUnits(): number {
+    return this.numRows / this.perUnit;
+  }
+
+  get unit(): string {
+    return matchUnitKeyByValue(this.unitSpan);
   }
 
   get multiple(): number {
