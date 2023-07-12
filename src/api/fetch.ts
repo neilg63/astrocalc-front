@@ -132,3 +132,11 @@ export const searchLocation = async (place: string, cc = ""): Promise<any> => {
   };
   return await fetchContentGeo(method, params);
 };
+
+export const fetchExtendedTransitions = async (
+  params: ParamSet
+): Promise<any> => {
+  const filter: Map<string, any> = new Map(Object.entries(params));
+  const method = "transitions";
+  return await fetchContentAstro(method, Object.fromEntries(filter.entries()));
+};

@@ -1,10 +1,10 @@
 import { Show, createEffect, createSignal } from "solid-js";
-import { fetchChartData, fetchTz, fetchProgressData } from "~/api/fetch";
+import { fetchChartData, fetchTz, fetchProgressData, fetchExtendedTransitions } from "~/api/fetch";
 import { formatDate, notEmptyString, yearsAgoDateString } from "~/api/utils";
 import { updateInputValue, updateIntValue } from "~/api/forms";
 import { decPlaces4, degAsLatStr, degAsLngStr, extractPlaceString, hrsMinsToString, smartCastInt } from "~/api/converters";
 import { fetchGeo, getGeoTzOffset } from "~/api/geoloc-utils";
-import { AstroChart, GeoLoc, GeoName, ProgressSet, TimeZoneInfo, latLngToLocString } from "~/api/models";
+import { AstroChart, GeoLoc, GeoName, ProgressSet, TimeZoneInfo, TransitionList, latLngToLocString } from "~/api/models";
 import { currentJulianDate, dateStringToJulianDate, julToDateParts, localDateStringToJulianDate } from "~/api/julian-date";
 import ChartData from "./ChartaData";
 import { fromLocal, toLocal } from "~/lib/localstore";
@@ -20,6 +20,7 @@ import TabSelector from "./TabSelector";
 import ButtonIconTrigger from "./ButtonIconTrigger";
 import SlideToggle from "./SlideToggle";
 import ProgressTable from "./ProgressTable";
+import TransitionListTable from "./TransitionListTable";
 
 interface LocDt {
   dt: string;
@@ -70,6 +71,7 @@ export default function ControlPanel() {
   const [topo, setTopo] = createSignal(false);
   const [unitType, setUnitType] = createSignal("day");
   const { dateTime, timeZone } = buildDateTimeStrings();
+  const [transitionList, setTransitionList] = createSignal(new TransitionList());
   const [currDateString, setCurrDateString] = createSignal(dateTime)
   const [currTimeZone, setCurrTimeZone] = createSignal(timeZone);
   const [localPlaceName, setLocalPlaceName] = createSignal('N/A')
@@ -168,6 +170,9 @@ export default function ControlPanel() {
       case "extended":
         fetchProgress();
         break;
+      case "transitions":
+        fetchExtTransitionData();
+        break;
     }
   }
 
@@ -245,6 +250,7 @@ export default function ControlPanel() {
       switch (key) {
         case 'core':
         case 'extended':
+        case 'transitions':
           return showData();
         default:
           return true;
@@ -394,6 +400,39 @@ export default function ControlPanel() {
     }
   }
 
+  const fetchExtTransitionData = () => {
+    const { loc, jd } = extractDtLoc();
+    const days = numUnits();
+    setShowData(false);
+    fetchExtendedTransitions({ jd, loc, days }).then(result => {
+      if (result instanceof Object) {
+        const trList = new TransitionList(result, tz(), placeString(), numUnits());
+        setTransitionList(trList)
+        setTimeout(() => {
+          setShowData(true);
+        }, 250)
+        toLocal('extended-transitions', trList);
+      }
+    });
+  }
+
+  const restoreExtTransitionData = () => {
+    const stored = fromLocal('extended-transitions', 7 * 24 * 60 * 60);
+    setShowData(false);
+    if (stored.data instanceof Object) {
+      const trList = new TransitionList(stored.data);
+      setTransitionList(trList);
+      setNumUnits(trList.days);
+      setPlaceString(trList.placeName);
+      const { lat, lng } = trList.geo;
+      syncLatLng(lat, lng);
+      updateDateTimeControls(trList.jd, trList.tz.utcOffset);
+      setTimeout(() => {
+        setShowData(true);
+      }, 250)
+    }
+  }
+
   const resetTime = () => {
     const jdObj = currentJulianDate();
     const parts = jdObj.toISOSimple().split("T");
@@ -493,6 +532,9 @@ export default function ControlPanel() {
         break;
       case 'extended':
         syncProgressSet();
+        break;
+      case 'transitions':
+        restoreExtTransitionData();
         break;
     }
     toLocal('pane', key);
@@ -655,7 +697,7 @@ export default function ControlPanel() {
       <div class="results-pane">
         <Show when={showPane('core')}><ChartData data={chart()} applyAya={applyAya()} /></Show>
         <Show when={showPane('extended')}><div class="extended"><ProgressTable data={progressSet()} /></div></Show>
-        <Show when={showPane('transitions')}><div class="transitions">To do: Extended transitions </div></Show>
+        <Show when={showPane('transitions')}><div class="transitions"><TransitionListTable data={transitionList()} /></div></Show>
         <Show when={showPane('stations')}><div class="stations">To do: Planetary motions </div></Show>
       </div>
     </>

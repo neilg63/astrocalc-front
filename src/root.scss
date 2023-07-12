@@ -150,6 +150,26 @@ main {
         background-color: rgba($light-grey, 0.25);
       }
     }
+    .transition-type {
+      strong {
+        display: inline-block;
+        margin-right: 0.5em;
+        color: $primary-blue;
+        width: 3em;
+      }
+    }
+    .mc, .ic {
+      .transition-type strong {
+        text-transform: uppercase;
+      }
+    }
+    .rise,
+    .set {
+      .transition-type strong {
+        text-transform: capitalize;
+        font-style: italic;
+      }
+    }
   }
   .results-pane {
     margin: 2.5rem auto 2rem auto;

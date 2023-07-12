@@ -1122,3 +1122,207 @@ export class GeoName {
     return [this.lat, this.lng].join(",");
   }
 }
+
+export class TransitionItem {
+  key = "";
+  jd = 0;
+  altitude = 0;
+
+  constructor(key = "", jd = 0, altitude = 0) {
+    if (notEmptyString(key)) {
+      this.key = key;
+    }
+    if (isNumeric(jd)) {
+      this.jd = smartCastFloat(jd);
+    }
+    if (isNumeric(altitude) && ["set", "rise"].includes(this.key) === false) {
+      this.altitude = smartCastFloat(altitude);
+    }
+  }
+
+  get valid() {
+    return this.jd > 1000 && this.key.length > 1;
+  }
+
+  get hasAltitude() {
+    return (
+      this.jd > 1000 && this.key.length > 1 && ["mc", "ic"].includes(this.key)
+    );
+  }
+}
+
+export class TransitionListSet {
+  key = "";
+  items: TransitionItem[] = [];
+
+  constructor(inData: any = null, restoreMode = false) {
+    if (inData instanceof Object) {
+      const { key, items } = inData;
+      if (notEmptyString(key) && items instanceof Array) {
+        this.key = key;
+        if (restoreMode) {
+          this.items = items
+            .filter((item) => item instanceof Object)
+            .map((row) => {
+              const { key, jd, altitude } = row;
+              return new TransitionItem(key, jd, altitude);
+            });
+        } else {
+          const numItems = items.length;
+          if (numItems > 3) {
+            let currentMinIndex = -1;
+            let currentMaxIndex = -1;
+            let minVal = 0;
+            let maxVal = 0;
+            for (let i = 0; i < numItems; i++) {
+              const row = items[i];
+              if (row instanceof Object) {
+                const { key, value } = row;
+                switch (key) {
+                  case "min":
+                    minVal = value;
+                    break;
+                  case "max":
+                    maxVal = value;
+                    break;
+                  case "ic":
+                  case "mc":
+                    if (key === "ic") {
+                      currentMinIndex = this.items.length;
+                    } else {
+                      currentMaxIndex = this.items.length;
+                    }
+                    this.items.push(new TransitionItem(key, value));
+                    break;
+                  case "rise":
+                  case "set":
+                    this.items.push(new TransitionItem(key, value));
+                    break;
+                }
+                if (currentMinIndex >= 0 && minVal !== 0) {
+                  if (this.items[currentMinIndex] instanceof TransitionItem) {
+                    this.items[currentMinIndex].altitude = minVal;
+                    currentMinIndex = -1;
+                    minVal = 0;
+                  }
+                }
+                if (currentMaxIndex >= 0 && maxVal !== 0) {
+                  if (this.items[currentMaxIndex] instanceof TransitionItem) {
+                    this.items[currentMaxIndex].altitude = maxVal;
+                    currentMaxIndex = -1;
+                    maxVal = 0;
+                  }
+                }
+              }
+              this.items.sort((a, b) => a.jd - b.jd);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+export class TransitionList {
+  jd = 0;
+
+  geo = new GeoLoc();
+
+  tz = new TimeZoneInfo();
+
+  days = 0;
+
+  transitionSets: TransitionListSet[] = [];
+
+  placeName = "";
+
+  constructor(
+    inData: any = null,
+    newTz = new TimeZoneInfo(),
+    placeNameString = "",
+    numDays = 0
+  ) {
+    if (inData instanceof Object) {
+      const keys = Object.keys(inData);
+      const restoreMode = keys.includes("tz") && keys.includes("placeName");
+      if (restoreMode) {
+        const { jd, tz, placeName, days } = inData;
+        if (tz instanceof Object) {
+          this.tz = new TimeZoneInfo(tz);
+        }
+        if (notEmptyString(placeName)) {
+          this.placeName = placeName;
+        }
+        if (isNumeric(jd)) {
+          this.jd = smartCastFloat(jd);
+        }
+        if (isNumeric(days)) {
+          this.days = smartCastInt(days);
+        }
+      } else {
+        const { date } = inData;
+        if (date instanceof Object) {
+          const { jd } = date;
+          this.jd = smartCastFloat(jd);
+        }
+      }
+      if (numDays > 0) {
+        this.days = smartCastInt(numDays);
+      }
+      const { geo, transitionSets } = inData;
+      if (newTz instanceof Object) {
+        this.tz = new TimeZoneInfo(newTz);
+      }
+      if (notEmptyString(placeNameString)) {
+        this.placeName = placeNameString;
+      }
+      if (transitionSets instanceof Array) {
+        this.transitionSets = transitionSets.map(
+          (tSet) => new TransitionListSet(tSet, restoreMode)
+        );
+      }
+      if (geo instanceof Object) {
+        this.geo = new GeoLoc(geo);
+      }
+    }
+  }
+
+  get keyMap(): Map<string, number> {
+    const mp: Map<string, number> = new Map();
+    this.transitionSets.forEach((tSet) => {
+      mp.set(tSet.key, tSet.items.length);
+    });
+    return mp;
+  }
+
+  get keys() {
+    return this.transitionSets.map((tSet) => tSet.key);
+  }
+
+  rows() {
+    const rows: TransitionItem[][] = [];
+    const keys = this.keys;
+    const keyMap = this.keyMap;
+    const maxLen = Math.max(...keyMap.values());
+    const emptyRow = keys.map((key) => new TransitionItem(key, 0));
+
+    for (let index = 0; index < maxLen; index++) {
+      rows.push([...emptyRow]);
+      keys.forEach((key, keyIndex) => {
+        const tSet = this.transitionSets[keyIndex];
+        if (tSet instanceof TransitionListSet) {
+          if (keyMap.has(key)) {
+            const num = keyMap.get(key);
+            if (typeof num === "number" && index < num) {
+              const currItem = this.transitionSets[keyIndex].items[index];
+              if (currItem instanceof TransitionItem) {
+                rows[index][keyIndex] = currItem;
+              }
+            }
+          }
+        }
+      });
+    }
+    return rows;
+  }
+}

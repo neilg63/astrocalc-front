@@ -1,24 +1,28 @@
 import { julToDateParts } from "~/api/julian-date";
 import Tooltip from "./Tooltip";
 import { julToLongDate, secsToString } from "~/api/converters";
+import { notEmptyString } from "~/api/utils";
+import { Show } from "solid-js";
 
 export default function DateTimeTip({ jd, utcOffset }: { jd: number; utcOffset: number }) {
   
-
   const offsetHrsMin = secsToString(utcOffset);
-  const [dateStr, timeStr] = julToLongDate(jd, utcOffset).split(' ')
-  const utcDTStr = julToDateParts(jd).toString();
-  const timeParts = timeStr.split(':');
-  const hasSecs = timeParts.length;
+  const hasJd = jd > 1000;
+  const [dateStr, timeStr] = hasJd ? julToLongDate(jd, utcOffset).split(' ') : ['', ''];
+  const utcDTStr = hasJd ? julToDateParts(jd).toString() : '';
+  const timeParts = notEmptyString(timeStr) ? timeStr.split(':') : [];
+  const hasSecs = timeParts.length > 2;
   const secs = hasSecs ? timeParts.pop() : '';
   const seconds = hasSecs ? `:${secs}` : '';
-  const hrsMin = timeParts.join(':');
+  const hrsMin = timeParts.length > 1 ? timeParts.join(':') : '';
 
-  const label = `UTC ${utcDTStr} (${offsetHrsMin})`;
+  const label = hasJd ? `UTC ${utcDTStr} (${offsetHrsMin})` : '';
 
-  return <Tooltip label={label}>
-    <time class="date">{dateStr}</time>
-    <time class="hrs-min">{hrsMin}</time>
-    <time class="seconds">{seconds}</time>
-  </Tooltip>
+  return <Show when={hasJd}>
+      <Tooltip label={label}>
+      <time class="date">{dateStr}</time>
+      <time class="hrs-min">{hrsMin}</time>
+      <time class="seconds">{seconds}</time>
+      </Tooltip>
+    </Show>
 }

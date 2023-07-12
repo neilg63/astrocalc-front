@@ -1,7 +1,7 @@
 import { For, Show } from "solid-js";
-import { decPlaces4, decPlaces6, degDecHint, julToLongDate } from "~/api/converters";
+import { decPlaces4, decPlaces6, degDecHint } from "~/api/converters";
 import { matchNameByGrahaKey, toEqKey, toTopoKey } from "~/api/mappings";
-import { Body, BodySet, ProgressSet } from "~/api/models";
+import { Body, ProgressSet } from "~/api/models";
 import DegreeTip from "./DegreeTip";
 import IconTrigger from "./IconTrigger";
 import { julToDateParts } from "~/api/julian-date";

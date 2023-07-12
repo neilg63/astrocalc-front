@@ -1018,7 +1018,11 @@ export const julToDateFormat = (
   return jd > 1000 ? julToDateFormatValid(jd, tzOffset, fmt, timeOptions) : "-";
 };
 
-export const julToLongDate = (jd: number, tzOffset: number, seconds = true) => {
+export const julToLongDate = (
+  jd: number,
+  tzOffset: number,
+  seconds = true
+): string => {
   return julToDateFormat(jd, tzOffset, "dmy", { time: true, seconds });
 };
 
