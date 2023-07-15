@@ -1373,7 +1373,7 @@ export class SunTransitionList {
   }
 
   get keys(): string[] {
-    return ["prev", "rise", "mc", "min", "set", "ic", "min", "next"];
+    return ["prev", "rise", "mc", "max", "set", "ic", "min", "next"];
   }
 }
 

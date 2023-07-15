@@ -12,7 +12,7 @@ export default function SunTransitionListTable({ data }: { data: SunTransitionLi
   const refKeys = data.keys;
   const numrefKeys = refKeys.length;
   const toKeyName = (key: string): string => {
-    return key.length == 2 ? key.toUpperCase() : snakeToWords(key);
+    return key.length == 2 ? key.toUpperCase() : capitalize(snakeToWords(key));
   }
   const allKeyNames = ["Phase", ...data.keys.map(toKeyName)];
   const toTabGrid = () => {
