@@ -1,6 +1,7 @@
 import {
   camelToTitle,
   decPlaces6,
+  julToISODate,
   smartCastFloat,
   smartCastInt,
   snakeToWords,
@@ -154,11 +155,13 @@ export class TimeZoneInfo {
 export class TransitionSet {
   key = "";
   prevSet = 0;
+  prevRise = 0;
   rise = 0;
   mc = 0;
   set = 0;
   ic = 0;
   nextRise = 0;
+  nextSet = 0;
   min = 0;
   max = 0;
 
@@ -170,6 +173,10 @@ export class TransitionSet {
           case "prev_set":
           case "prevSet":
             this.prevSet = row.value;
+            break;
+          case "prev_rise":
+          case "prevRise":
+            this.prevRise = row.value;
             break;
           case "rise":
             this.rise = row.value;
@@ -187,6 +194,10 @@ export class TransitionSet {
           case "nextRise":
             this.nextRise = row.value;
             break;
+          case "next_set":
+          case "nextSet":
+            this.nextSet = row.value;
+            break;
           case "min":
             this.min = row.value;
             break;
@@ -203,11 +214,13 @@ export class TransitionSet {
         } else if (dataType === "number") {
           switch (key) {
             case "prevSet":
+            case "prevRise":
             case "rise":
             case "mc":
             case "set":
             case "ic":
             case "nextRise":
+            case "nextSet":
             case "min":
             case "max":
               this[key] = value as number;
@@ -226,6 +239,10 @@ export class TransitionSet {
     return this.prevSet > 0;
   }
 
+  get hasPrevRise(): boolean {
+    return this.prevRise > 0;
+  }
+
   get hasRise(): boolean {
     return this.rise > 0;
   }
@@ -233,8 +250,53 @@ export class TransitionSet {
   get hasNextRise(): boolean {
     return this.nextRise > 0;
   }
+
+  get hasNextSet(): boolean {
+    return this.nextSet > 0;
+  }
+
   get hasMinMax(): boolean {
     return this.min !== 0 || this.max !== 0;
+  }
+
+  get next(): number {
+    return this.hasNextRise ? this.nextRise : this.nextSet;
+  }
+
+  get prev(): number {
+    return this.hasPrevSet ? this.prevSet : this.prevRise;
+  }
+
+  get showNext(): boolean {
+    return !this.hasSet;
+  }
+
+  get showPrev(): boolean {
+    return !this.hasRise;
+  }
+
+  get nextName(): string {
+    return this.max < 0 ? "next set" : this.hasNextRise ? "next rise" : "";
+  }
+
+  get prevName(): string {
+    return this.min > 0
+      ? "previous rise"
+      : this.hasPrevSet
+      ? "previous set"
+      : "";
+  }
+
+  get phase(): string {
+    if (this.hasSet && this.hasRise) {
+      return "daily";
+    } else if (this.hasSet && !this.hasRise && this.min < 1) {
+      return "up_ended";
+    } else if (this.hasRise && !this.hasSet && this.max > -1) {
+      return "down_ended";
+    } else {
+      return this.min >= 0 ? "up" : "down";
+    }
   }
 }
 
@@ -1151,6 +1213,69 @@ export class TransitionItem {
   }
 }
 
+const buildTransitionItems = (items: any[] = [], restoreMode = false) => {
+  let newItems: TransitionItem[] = [];
+  if (restoreMode) {
+    newItems = items
+      .filter((item) => item instanceof Object)
+      .map((row) => {
+        const { key, jd, altitude } = row;
+        return new TransitionItem(key, jd, altitude);
+      });
+  } else {
+    const numItems = items.length;
+    if (numItems > 3) {
+      let currentMinIndex = -1;
+      let currentMaxIndex = -1;
+      let minVal = 0;
+      let maxVal = 0;
+      for (let i = 0; i < numItems; i++) {
+        const row = items[i];
+        if (row instanceof Object) {
+          const { key, value } = row;
+          switch (key) {
+            case "min":
+              minVal = value;
+              break;
+            case "max":
+              maxVal = value;
+              break;
+            case "ic":
+            case "mc":
+              if (key === "ic") {
+                currentMinIndex = newItems.length;
+              } else {
+                currentMaxIndex = newItems.length;
+              }
+              newItems.push(new TransitionItem(key, value));
+              break;
+            case "rise":
+            case "set":
+              newItems.push(new TransitionItem(key, value));
+              break;
+          }
+          if (currentMinIndex >= 0 && minVal !== 0) {
+            if (newItems[currentMinIndex] instanceof TransitionItem) {
+              newItems[currentMinIndex].altitude = minVal;
+              currentMinIndex = -1;
+              minVal = 0;
+            }
+          }
+          if (currentMaxIndex >= 0 && maxVal !== 0) {
+            if (newItems[currentMaxIndex] instanceof TransitionItem) {
+              newItems[currentMaxIndex].altitude = maxVal;
+              currentMaxIndex = -1;
+              maxVal = 0;
+            }
+          }
+        }
+      }
+    }
+  }
+  newItems.sort((a, b) => a.jd - b.jd);
+  return newItems;
+};
+
 export class TransitionListSet {
   key = "";
   items: TransitionItem[] = [];
@@ -1158,68 +1283,97 @@ export class TransitionListSet {
   constructor(inData: any = null, restoreMode = false) {
     if (inData instanceof Object) {
       const { key, items } = inData;
-      if (notEmptyString(key) && items instanceof Array) {
+      const refItems = items instanceof Array ? items : [];
+      if (refItems.length > 0) {
+        this.items = buildTransitionItems(refItems, restoreMode);
+      }
+      if (notEmptyString(key)) {
         this.key = key;
-        if (restoreMode) {
-          this.items = items
-            .filter((item) => item instanceof Object)
-            .map((row) => {
-              const { key, jd, altitude } = row;
-              return new TransitionItem(key, jd, altitude);
-            });
-        } else {
-          const numItems = items.length;
-          if (numItems > 3) {
-            let currentMinIndex = -1;
-            let currentMaxIndex = -1;
-            let minVal = 0;
-            let maxVal = 0;
-            for (let i = 0; i < numItems; i++) {
-              const row = items[i];
-              if (row instanceof Object) {
-                const { key, value } = row;
-                switch (key) {
-                  case "min":
-                    minVal = value;
-                    break;
-                  case "max":
-                    maxVal = value;
-                    break;
-                  case "ic":
-                  case "mc":
-                    if (key === "ic") {
-                      currentMinIndex = this.items.length;
-                    } else {
-                      currentMaxIndex = this.items.length;
-                    }
-                    this.items.push(new TransitionItem(key, value));
-                    break;
-                  case "rise":
-                  case "set":
-                    this.items.push(new TransitionItem(key, value));
-                    break;
-                }
-                if (currentMinIndex >= 0 && minVal !== 0) {
-                  if (this.items[currentMinIndex] instanceof TransitionItem) {
-                    this.items[currentMinIndex].altitude = minVal;
-                    currentMinIndex = -1;
-                    minVal = 0;
-                  }
-                }
-                if (currentMaxIndex >= 0 && maxVal !== 0) {
-                  if (this.items[currentMaxIndex] instanceof TransitionItem) {
-                    this.items[currentMaxIndex].altitude = maxVal;
-                    currentMaxIndex = -1;
-                    maxVal = 0;
-                  }
-                }
-              }
-              this.items.sort((a, b) => a.jd - b.jd);
-            }
+      }
+    }
+  }
+}
+
+export class SunTransitionList {
+  key = "su";
+
+  jd = 0;
+
+  geo = new GeoLoc();
+
+  placeName = "";
+
+  tz = new TimeZoneInfo();
+
+  days = 0;
+
+  items: TransitionSet[] = [];
+
+  constructor(
+    inData: any = null,
+    newTz = new TimeZoneInfo(),
+    placeString = "",
+    numDays = 0
+  ) {
+    const isObj = inData instanceof Object;
+    const keys = isObj ? Object.keys(inData) : [];
+    const restoreMode = keys.includes("days") && keys.includes("jd");
+    if (isObj) {
+      const { key, geo } = inData;
+      if (notEmptyString(key)) {
+        this.key = key;
+      }
+      if (geo instanceof Object) {
+        const { jd } = inData;
+        this.geo = new GeoLoc(geo);
+      }
+      if (restoreMode) {
+        const { jd, days, tz, placeName, items } = inData;
+        if (isNumeric(jd)) {
+          this.jd = smartCastFloat(jd);
+        }
+        if (isNumeric(days)) {
+          this.days = smartCastInt(days);
+        }
+        if (tz instanceof Object) {
+          this.tz = new TimeZoneInfo(tz);
+        }
+        if (notEmptyString(placeName)) {
+          this.placeName = placeName;
+        }
+        if (items instanceof Array) {
+          this.items = items.map(
+            (row) => new TransitionSet({ key: "su", ...row })
+          );
+        }
+      } else {
+        const { date, sunTransitions } = inData;
+        if (date instanceof Object) {
+          const { jd } = inData;
+          if (isNumeric(jd)) {
+            this.jd = smartCastFloat(jd);
           }
+        }
+        if (newTz instanceof Object) {
+          this.tz = new TimeZoneInfo(newTz);
+        }
+        if (numDays) {
+          this.days = smartCastInt(numDays, 1);
+        }
+        if (notEmptyString(placeString)) {
+          this.placeName = placeString;
+        }
+        if (sunTransitions instanceof Array) {
+          this.items = sunTransitions.map(
+            (row) => new TransitionSet({ key: "su", ...row })
+          );
         }
       }
     }
+  }
+
+  get keys(): string[] {
+    return ["prev", "rise", "mc", "min", "set", "ic", "min", "next"];
   }
 }
 

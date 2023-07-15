@@ -4,7 +4,7 @@ import { julToLongDate, secsToString } from "~/api/converters";
 import { notEmptyString } from "~/api/utils";
 import { Show } from "solid-js";
 
-export default function DateTimeTip({ jd, utcOffset }: { jd: number; utcOffset: number }) {
+export default function DateTimeTip({ jd, utcOffset, label }: { jd: number; utcOffset: number;  label?: string}) {
   
   const offsetHrsMin = secsToString(utcOffset);
   const hasJd = jd > 1000;
@@ -15,11 +15,11 @@ export default function DateTimeTip({ jd, utcOffset }: { jd: number; utcOffset: 
   const secs = hasSecs ? timeParts.pop() : '';
   const seconds = hasSecs ? `:${secs}` : '';
   const hrsMin = timeParts.length > 1 ? timeParts.join(':') : '';
-
-  const label = hasJd ? `UTC ${utcDTStr} (${offsetHrsMin})` : '';
+  const labelStart = notEmptyString(label) ? `${label}: ` : '';
+  const labelText = hasJd ? `${labelStart}UTC ${utcDTStr} (${offsetHrsMin})` : '';
 
   return <Show when={hasJd}>
-      <Tooltip label={label}>
+      <Tooltip label={labelText}>
       <time class="date">{dateStr}</time>
       <time class="hrs-min">{hrsMin}</time>
       <time class="seconds">{seconds}</time>

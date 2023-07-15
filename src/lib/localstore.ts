@@ -48,6 +48,10 @@ export const fromLocal = (key = "", maxAge = 3600) => {
   return obj;
 };
 
+export const fromLocalDays = (key = "", days = 1) => {
+  return fromLocal(key, days * 24 * 60 * 60);
+};
+
 export const clearLocal = (key = "", fuzzy = false) => {
   if (localStoreSupported()) {
     const keys = Object.keys(localStorage);

@@ -1,24 +1,22 @@
 import { For, Show } from "solid-js";
 import { julToISODate } from "~/api/converters";
-import { TransitionItem, TransitionList } from "~/api/models";
+import { TransitionList, TransitionItem } from "~/api/models";
 import { matchNameByGrahaKey } from "~/api/mappings";
 import IconTrigger from "./IconTrigger";
 import DateTimeTip from "./DateTimeTip";
 import DegreeTip from "./DegreeTip";
 
-export default function TransitionListTable({ data }: { data: TransitionList }) {
+export default function TransitionListTable({ data }: { data: TransitionList  }) {
   const tzOffset = data.tz.utcOffset;
+  const refKeys = data.keys;
 
-  const grahaKeys = data.transitionSets.map(tSet => tSet.key);
-
-
-  const numGrahaKeys = grahaKeys.length;
-
+  
+  const numrefKeys = refKeys.length;
   const toTabGrid = () => {
     const rows = data.rows().map((row: TransitionItem[]) => {
       return row.map((cell:TransitionItem) => julToISODate(cell.jd, tzOffset)).join("\t");
     });
-    const header = data.keys.map(key => matchNameByGrahaKey(key))
+    const header = data.keys.map(key => matchNameByGrahaKey(key));
     return [header, ...rows].join("\n")
   }
 
@@ -31,8 +29,8 @@ export default function TransitionListTable({ data }: { data: TransitionList }) 
     const cls = [];
     if (cell.valid) {
       cls.push(cell.key);
-      if (index >= 0 && index < numGrahaKeys) {
-        cls.push(grahaKeys[index])
+      if (index >= 0 && index < numrefKeys) {
+        cls.push(refKeys[index])
       }
     } else {
       cls.push('empty');
@@ -42,7 +40,7 @@ export default function TransitionListTable({ data }: { data: TransitionList }) 
   return <table>
     <thead>
       <tr>
-        <For each={grahaKeys}>
+        <For each={refKeys}>
           {(key) => <th>{ matchNameByGrahaKey(key)}</th>}
         </For>
       </tr>
@@ -53,16 +51,16 @@ export default function TransitionListTable({ data }: { data: TransitionList }) 
           <For each={row}>
             {(cell, cellIndex) => <>
               <td class={cellClasses(cell, cellIndex())}>
-                  <Show when={cell.valid}>
-                <div class="column">
-                  <div class="flex flow-row transition-type">
-                     <strong>{cell.key}</strong>
-                      <Show when={cell.hasAltitude}>
-                          <DegreeTip label="Altitude" degree={cell.altitude} />
-                        </Show>
+                <Show when={cell.valid}>
+                  <div class="column">
+                    <div class="flex flow-row transition-type">
+                      <strong>{cell.key}</strong>
+                        <Show when={cell.hasAltitude}>
+                            <DegreeTip label="Altitude" degree={cell.altitude} />
+                          </Show>
+                      </div>
+                        <DateTimeTip jd={cell.jd} utcOffset={tzOffset}></DateTimeTip>
                     </div>
-                      <DateTimeTip jd={cell.jd} utcOffset={tzOffset}></DateTimeTip>
-                  </div>
                 </Show>
               </td>
             </>}
@@ -71,7 +69,7 @@ export default function TransitionListTable({ data }: { data: TransitionList }) 
       </For>
     </tbody>
     <tfoot>
-      <tr><th colspan={numGrahaKeys}>
+      <tr><th colspan={numrefKeys}>
         <IconTrigger label="Copy data grid compatible with spreadsheets" color="info" onClick={() => copyGrid()} icon="content_copy" />
       </th></tr>
     </tfoot>

@@ -508,10 +508,10 @@ main {
 .top-grid {
   max-width: 70rem;
   margin: 0 auto;
-  grid-template-columns: 3fr 2fr 1fr;
-  grid-template-areas: "datetime datetime actions"
-                        "location location actions"
-                        "options tabs tabs";
+  grid-template-columns: 5fr 3fr;
+  grid-template-areas: "datetime tabs"
+                        "location subtabs"
+                        "options actions";
   .date-time-bar {
     grid-area: datetime;
     margin-bottom: 0.375em;
@@ -547,11 +547,16 @@ main {
     grid-area: tabs;
     justify-content: flex-end;
   }
+    .subtab-selector {
+      grid-area: subtabs;
+      justify-content: flex-end;
+    }
   .option-bar {
     grid-area: options;
   }
   .actions {
     grid-area: actions;
+    justify-content: flex-end;
   }
   .actions button:hover,
   .tooltip-container:hover .material-icons {

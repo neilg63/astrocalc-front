@@ -4,10 +4,10 @@ import { formatDate, notEmptyString, yearsAgoDateString } from "~/api/utils";
 import { updateInputValue, updateIntValue } from "~/api/forms";
 import { decPlaces4, degAsLatStr, degAsLngStr, extractPlaceString, hrsMinsToString, smartCastInt } from "~/api/converters";
 import { fetchGeo, getGeoTzOffset } from "~/api/geoloc-utils";
-import { AstroChart, GeoLoc, GeoName, ProgressSet, TimeZoneInfo, TransitionList, latLngToLocString } from "~/api/models";
+import { AstroChart, GeoLoc, GeoName, ProgressSet, SunTransitionList, TimeZoneInfo, TransitionList, latLngToLocString } from "~/api/models";
 import { currentJulianDate, dateStringToJulianDate, julToDateParts, localDateStringToJulianDate } from "~/api/julian-date";
 import ChartData from "./ChartaData";
-import { fromLocal, toLocal } from "~/lib/localstore";
+import { fromLocal, fromLocalDays, toLocal } from "~/lib/localstore";
 import AyanamashaSelect from "./AyanamshaSelect";
 import OptionSelect from "./OptionSelect";
 import { eqOptions, houseSystems, matchUnitsBySection, showEqOptions, toEqInt, toEqKey, unitKeyToDays, unitKeyToObject } from "~/api/mappings";
@@ -21,6 +21,7 @@ import ButtonIconTrigger from "./ButtonIconTrigger";
 import SlideToggle from "./SlideToggle";
 import ProgressTable from "./ProgressTable";
 import TransitionListTable from "./TransitionListTable";
+import SunTransitionListTable from "./SunTransitionListTable";
 
 interface LocDt {
   dt: string;
@@ -72,6 +73,7 @@ export default function ControlPanel() {
   const [unitType, setUnitType] = createSignal("day");
   const { dateTime, timeZone } = buildDateTimeStrings();
   const [transitionList, setTransitionList] = createSignal(new TransitionList());
+  const [sunTransitionList, setSunTransitionList] = createSignal(new SunTransitionList());
   const [currDateString, setCurrDateString] = createSignal(dateTime)
   const [currTimeZone, setCurrTimeZone] = createSignal(timeZone);
   const [localPlaceName, setLocalPlaceName] = createSignal('N/A')
@@ -171,7 +173,8 @@ export default function ControlPanel() {
         fetchProgress();
         break;
       case "transitions":
-        fetchExtTransitionData();
+        const sunMode = mode() === "sun";
+        fetchExtTransitionData(sunMode);
         break;
     }
   }
@@ -337,7 +340,7 @@ export default function ControlPanel() {
   }
 
   const retrieveChartData = () => {
-    const cData = fromLocal("current-chart", 7 * 24 * 3600);
+    const cData = fromLocalDays("current-chart", 7);
     const data = cData.valid ? cData.data : null;
     const exists = data instanceof Object;
     return { exists, data };
@@ -373,7 +376,7 @@ export default function ControlPanel() {
   }
 
   const syncProgressSet = () => {
-    const stored = fromLocal('progress-set', 24 * 60 * 60);
+    const stored = fromLocalDays('progress-set', 7);
     setShowData(false);
     if (stored.data instanceof Object) {
       const { jd, items } = stored.data;
@@ -400,36 +403,63 @@ export default function ControlPanel() {
     }
   }
 
-  const fetchExtTransitionData = () => {
+  const fetchExtTransitionData = (sunMode = false) => {
     const { loc, jd } = extractDtLoc();
     const days = numUnits();
     setShowData(false);
-    fetchExtendedTransitions({ jd, loc, days }).then(result => {
+    fetchExtendedTransitions({ jd, loc, days }, sunMode).then(result => {
       if (result instanceof Object) {
-        const trList = new TransitionList(result, tz(), placeString(), numUnits());
-        setTransitionList(trList)
+        
+        
+        if (sunMode) {
+          const sunList = new SunTransitionList(result, tz(), placeString(), numUnits());
+          setSunTransitionList(sunList)
+          toLocal('sun-transitions', sunList);
+        } else {
+          const trList = new TransitionList(result, tz(), placeString(), numUnits());
+          setTransitionList(trList);
+          toLocal('extended-transitions', trList);
+        }
         setTimeout(() => {
           setShowData(true);
         }, 250)
-        toLocal('extended-transitions', trList);
       }
     });
   }
 
+  const matchTransitionStoreKey = (mode = "standard") => {
+    switch (mode) {
+      case 'sun':
+        return 'sun-transitions';
+      case 'transposed':
+        return 'transposed-transitions';
+      default:
+        return 'extended-transitions';
+    }
+  }
+
   const restoreExtTransitionData = () => {
-    const stored = fromLocal('extended-transitions', 7 * 24 * 60 * 60);
+    const modeKey = mode();
+    const cacheKey = matchTransitionStoreKey(modeKey);
+    const stored = fromLocalDays(cacheKey, 7);
     setShowData(false);
     if (stored.data instanceof Object) {
-      const trList = new TransitionList(stored.data);
-      setTransitionList(trList);
-      setNumUnits(trList.days);
-      setPlaceString(trList.placeName);
-      const { lat, lng } = trList.geo;
-      syncLatLng(lat, lng);
-      updateDateTimeControls(trList.jd, trList.tz.utcOffset);
-      setTimeout(() => {
-        setShowData(true);
-      }, 250)
+      const trList = modeKey === 'standard' ? new TransitionList(stored.data) : modeKey === 'sun' ? new SunTransitionList(stored.data) : null;
+      if (trList instanceof TransitionList || trList instanceof SunTransitionList) {
+        if (trList instanceof TransitionList) {
+          setTransitionList(trList);
+        } else if (trList instanceof SunTransitionList) {
+          setSunTransitionList(trList);
+        }
+        setNumUnits(trList.days);
+        setPlaceString(trList.placeName);
+        const { lat, lng } = trList.geo;
+        syncLatLng(lat, lng);
+        updateDateTimeControls(trList.jd, trList.tz.utcOffset);
+        setTimeout(() => {
+          setShowData(true);
+        }, 250)
+      }
     }
   }
 
@@ -540,6 +570,25 @@ export default function ControlPanel() {
     toLocal('pane', key);
   }
 
+  const updateMode = (key: string) => {
+    setMode(key);
+    switch (pane()) {
+      case "transitions":
+        switch (key) {
+          case 'standard':
+            restoreExtTransitionData();
+            break;
+          case 'transposed':
+            break;
+          case 'sun':
+            restoreExtTransitionData();
+            break;
+        }
+        toLocal('mode', key);
+        break;
+    }
+  }
+
   const astroControlClasses = (): string => {
     const cls = ["top-controls", "grid", "top-grid"];
     if (applyAya()) {
@@ -560,8 +609,8 @@ export default function ControlPanel() {
     if (!init()) {
       const secsOffset = getGeoTzOffset();
       updateTimeOffset(secsOffset);
-      const geoData = fromLocal("geoname", 7 * 24 * 3600);
-      const tzData = fromLocal("current-tz", 24 * 3600);
+      const geoData = fromLocalDays("geoname", 7);
+      const tzData = fromLocalDays("current-tz", 1);
       const chartStore = retrieveChartData();
       const tzObj = tzData.valid ? tzData.data : null;
       let tzInfo = new TimeZoneInfo(tzObj);
@@ -588,7 +637,7 @@ export default function ControlPanel() {
       setTimeout(() => {
         setInit(true)
         if (defLng() === 0 && defLat() === 0) {
-          const cGeoData = fromLocal("current-geo");
+          const cGeoData = fromLocal("current-geo", 3600);
           if (cGeoData.data instanceof Object) {
             const { lat, lng } = cGeoData.data;
             if (typeof lat === "number") {
@@ -670,16 +719,17 @@ export default function ControlPanel() {
               <SlideToggle offName="geocentric" onName="topocentric" isOn={topo} onChange={updateTopo} key="topo-toggle" />
             </Show>
         </div>
-        <div class="actions flex flex-column">
-            <ButtonIconTrigger name="Calculate" color="success" onClick={fetchData} label="Calculate planetary positions, transitions and special degrees" key="submit" size="large" icon="calculate" />
-            <Show when={showNextPrev()}>
-              <div class="flex flex-row next-prev">
-                <IconTrigger label="Previous day" color="success" icon="arrow_back" onClick={fetchChartPrev} />
-                <IconTrigger label="Next day" color="success" icon="arrow_forward" onClick={fetchChartNext} />
-              </div>
-            </Show>
+          <TabSelector pane={pane} setPane={updatePane} />
+          <TabSelector pane={mode} setPane={updateMode} parent={pane} />
+        <div class="actions flex flex-row">
+          <Show when={showNextPrev()}>
+            <IconTrigger label="Previous day" color="success" icon="arrow_back" onClick={fetchChartPrev} />
+          </Show>
+          <ButtonIconTrigger name="Calculate" color="success" onClick={fetchData} label="Calculate planetary positions, transitions and special degrees" key="submit" size="large" icon="calculate" />
+          <Show when={showNextPrev()}>
+              <IconTrigger label="Next day" color="success" icon="arrow_forward" onClick={fetchChartNext} />
+          </Show>
         </div>
-        <TabSelector pane={pane} setPane={updatePane} />
       </fieldset>
       <div class="status-row flex flex-row">
         <h4 class="space-parts">
@@ -697,7 +747,10 @@ export default function ControlPanel() {
       <div class="results-pane">
         <Show when={showPane('core')}><ChartData data={chart()} applyAya={applyAya()} /></Show>
         <Show when={showPane('extended')}><div class="extended"><ProgressTable data={progressSet()} /></div></Show>
-        <Show when={showPane('transitions')}><div class="transitions"><TransitionListTable data={transitionList()} /></div></Show>
+        <Show when={showPane('transitions')}><div class="transitions">
+          <Show when={mode() === 'standard'}><TransitionListTable data={transitionList()} /></Show>
+          <Show when={mode() === 'sun'}><SunTransitionListTable data={sunTransitionList()} /></Show>
+          </div></Show>
         <Show when={showPane('stations')}><div class="stations">To do: Planetary motions </div></Show>
       </div>
     </>

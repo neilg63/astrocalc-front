@@ -134,9 +134,14 @@ export const searchLocation = async (place: string, cc = ""): Promise<any> => {
 };
 
 export const fetchExtendedTransitions = async (
-  params: ParamSet
+  params: ParamSet,
+  sunMode = false
 ): Promise<any> => {
   const filter: Map<string, any> = new Map(Object.entries(params));
-  const method = "transitions";
+  const method = sunMode ? "sun-transitions" : "transitions";
   return await fetchContentAstro(method, Object.fromEntries(filter.entries()));
+};
+
+export const fetchSunTransitions = async (params: ParamSet): Promise<any> => {
+  return await fetchExtendedTransitions(params);
 };
