@@ -1,15 +1,15 @@
 import { For, Show } from "solid-js";
-import { degAsDms, julToISODate, julToLongDate, standardDecHint } from "~/api/converters";
-import { TransitionSet } from "~/api/models";
+import { degAsDms, julToISODate, standardDecHint } from "~/api/converters";
+import { TransitSet } from "~/api/models";
 import { matchNameByGrahaKey } from "~/api/mappings";
 import IconTrigger from "./IconTrigger";
 import Tooltip from "./Tooltip";
 import DateTimeTip from "./DateTimeTip";
 
-export default function TransitionTable({ transitions, tzOffset }: { transitions: TransitionSet[]; tzOffset: number }) {
+export default function TransitTable({ items, tzOffset }: { items: TransitSet[]; tzOffset: number }) {
   const toISODateTime = (jd = 0): string => julToISODate(jd, tzOffset,true);
   const toTabGrid = () => {
-    const rows = transitions.map(row => {
+    const rows = items.map(row => {
       return [matchNameByGrahaKey(row.key), toISODateTime(row.rise), toISODateTime(row.mc), toISODateTime(row.set), toISODateTime(row.ic)].join("\t");
     })
     const header = ['Name', 'Set', 'Trop. Longitude', 'Lng. Speed', 'Latitude', 'Lat. peed', 'Right Asc.', 'Declination','Azimuth', 'Altitude']
@@ -35,7 +35,7 @@ export default function TransitionTable({ transitions, tzOffset }: { transitions
       </tr>
     </thead>
     <tbody>
-    <For each={transitions}>
+    <For each={items}>
         {(item) => <tr class={item.key}>
           <td class="key">{ matchNameByGrahaKey(item.key) }</td>
           <td class="prev-set">

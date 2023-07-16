@@ -4,7 +4,7 @@ import { AstroChart } from "~/api/models";
 import IndianTimeGroup from "./IndianTimeGroup";
 import SphutaGroup from "./SphutaGroup";
 import UpaGroup from "./UpaGroup";
-import TransitionTable from "./TransitionTable";
+import TransitTable from "./TransitTable";
 import PositionTable from "./PositionTable";
 import HouseGroup from "./HouseGroup";
 
@@ -65,7 +65,7 @@ export default function ChartData({ data, applyAya }: {data: AstroChart, applyAy
       <IndianTimeGroup data={data.indianTime} />
     </div>
     <PositionTable data={data} applyAya={applyAya} />
-    <TransitionTable transitions={data.transits} tzOffset={data.tzOffsetSeconds} />
+    <TransitTable items={data.transits} tzOffset={data.tzOffsetSeconds} />
     <div class="extra-data-row flex flex-row">
       <Show when={data.hasUpagrahas}>
         <For each={data.upagrahas}>

@@ -1202,3 +1202,15 @@ export const extractPlaceString = (placenames: any[]) => {
   }
   return "N/A";
 };
+
+export const yearToISODateTime = (year: string | number): string => {
+  const refYear =
+    typeof year === "number"
+      ? year >= 1000
+        ? year
+        : 2000
+      : isNumeric(year)
+      ? parseInt(year, 10)
+      : 1993;
+  return `${refYear}-01-01T00:00:00`;
+};

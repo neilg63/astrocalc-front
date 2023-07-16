@@ -1,10 +1,10 @@
 import { Show, createEffect, createSignal } from "solid-js";
-import { fetchChartData, fetchTz, fetchProgressData, fetchExtendedTransits } from "~/api/fetch";
+import { fetchChartData, fetchTz, fetchProgressData, fetchExtendedTransits, fetchOrbitPhases } from "~/api/fetch";
 import { formatDate, notEmptyString, yearsAgoDateString } from "~/api/utils";
 import { updateInputValue, updateIntValue } from "~/api/forms";
-import { decPlaces4, degAsLatStr, degAsLngStr, extractPlaceString, hrsMinsToString, smartCastInt } from "~/api/converters";
+import { decPlaces4, degAsLatStr, degAsLngStr, extractPlaceString, hrsMinsToString, smartCastInt, yearToISODateTime } from "~/api/converters";
 import { fetchGeo, getGeoTzOffset } from "~/api/geoloc-utils";
-import { AstroChart, GeoLoc, GeoName, ProgressSet, SunTransitList, TimeZoneInfo, TransitList, latLngToLocString } from "~/api/models";
+import { AstroChart, GeoLoc, GeoName, OrbitList, ProgressSet, SunTransitList, TimeZoneInfo, TransitList, latLngToLocString } from "~/api/models";
 import { currentJulianDate, dateStringToJulianDate, julToDateParts, localDateStringToJulianDate } from "~/api/julian-date";
 import ChartData from "./ChartaData";
 import { fromLocal, fromLocalDays, toLocal } from "~/lib/localstore";
@@ -74,6 +74,7 @@ export default function ControlPanel() {
   const { dateTime, timeZone } = buildDateTimeStrings();
   const [transitList, setTransitList] = createSignal(new TransitList());
   const [sunTransitList, setSunTransitList] = createSignal(new SunTransitList());
+  const [orbitList, setOrbitList] = createSignal(new OrbitList());
   const [currDateString, setCurrDateString] = createSignal(dateTime)
   const [currTimeZone, setCurrTimeZone] = createSignal(timeZone);
   const [localPlaceName, setLocalPlaceName] = createSignal('N/A')
@@ -418,6 +419,27 @@ export default function ControlPanel() {
           setTransitList(trList);
           toLocal('extended-transits', trList);
         }
+        setTimeout(() => {
+          setShowData(true);
+        }, 250)
+      }
+    });
+  }
+
+  const fetchOrbitData = () => {
+    const { loc, jd } = extractDtLoc();
+    setShowData(false);
+    const dtStr = dateString();
+    const dt2Str = endDateString();
+    const startYear = notEmptyString(dtStr) ? dtStr.split('-').shift() : '1973'; 
+    const endYear = notEmptyString(dtStr) ? dt2Str.split('-').shift() : '2043'; 
+    const dt = yearToISODateTime(startYear as string);
+    const dt2 = yearToISODateTime(endYear as string);
+    fetchOrbitPhases({ dt, dt2 },).then(result => {
+      if (result instanceof Object) {
+          const trList = new TransitList(result, tz(), placeString(), numUnits());
+          setTransitList(trList);
+          toLocal('planet-orbits', trList);
         setTimeout(() => {
           setShowData(true);
         }, 250)

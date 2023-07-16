@@ -927,6 +927,7 @@ export class AstroChart {
         indianTime,
         ayanamshas,
         transits,
+        transitions,
         variants,
         sphutas,
         upagrahas,
@@ -1011,8 +1012,14 @@ export class AstroChart {
           .filter((row) => row instanceof Object)
           .map((row) => row as KeyNumValue);
       }
-      if (transits instanceof Array) {
-        for (const row of transits) {
+      const refItems =
+        transitions instanceof Array
+          ? transitions
+          : transits instanceof Array
+          ? transits
+          : [];
+      if (refItems instanceof Array) {
+        for (const row of refItems) {
           if (row instanceof Object) {
             if (restoreMode) {
               this.transits.push(new TransitSet(row));
@@ -1483,5 +1490,42 @@ export class TransitList {
       });
     }
     return rows;
+  }
+}
+
+export class OrbitStation {
+  key = "";
+  stations: OrbitStation[] = [];
+
+  constructor(inData: any = null) {
+    if (inData instanceof Object) {
+      const { items } = inData;
+    }
+  }
+}
+
+export class OrbitSet {
+  key = "";
+  stations: OrbitStation[] = [];
+
+  constructor(inData: any = null) {
+    if (inData instanceof Object) {
+      const { items } = inData;
+      if (items instanceof Object) {
+        const { items } = inData;
+      }
+    }
+  }
+}
+
+export class OrbitList {
+  dt = "1973-01-01T00:00:00";
+  dt2 = "1973-01-01T00:00:00";
+  items: OrbitSet[] = [];
+
+  constructor(inData: any = null) {
+    if (inData instanceof Object) {
+      const { items } = inData;
+    }
   }
 }

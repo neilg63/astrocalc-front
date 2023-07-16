@@ -1,7 +1,7 @@
 import { astroCalcBase, geoTimeBase } from "./settings";
 import { isNumeric, notEmptyString, renderDateRange } from "./utils";
 import { ParamSet } from "./interfaces";
-import { smartCastInt } from "./converters";
+import { smartCastInt, yearToISODateTime } from "./converters";
 
 const matchService = (service = "") => {
   switch (service) {
@@ -144,4 +144,28 @@ export const fetchExtendedTransits = async (
 
 export const fetchSunTransitions = async (params: ParamSet): Promise<any> => {
   return await fetchExtendedTransits(params);
+};
+
+export const fetchOrbitPhases = async (
+  params: ParamSet,
+  sunMode = false
+): Promise<any> => {
+  const filter: Map<string, any> = new Map(Object.entries(params));
+  const hasStart = filter.has("dt");
+  const hasEnd = filter.has("dt2");
+  if (!hasStart || !hasEnd) {
+    const currYear = new Date().getFullYear();
+    if (!hasStart) {
+      const startYear = currYear - 50;
+      const dt = yearToISODateTime(startYear);
+      filter.set("dt", dt);
+    }
+    if (!hasEnd) {
+      const endYear = currYear + 20 + 1;
+      const dt2 = yearToISODateTime(endYear);
+      filter.set("dt2", dt2);
+    }
+  }
+  const method = "planet-station";
+  return await fetchContentAstro(method, Object.fromEntries(filter.entries()));
 };

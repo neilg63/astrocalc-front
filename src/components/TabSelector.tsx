@@ -12,7 +12,7 @@ interface TabItem {
 
 
 const transitModes: TabItem[] = [
-  { label: "Extended transitions for the Sun, Moon and core planets", value: "standard", name: "Standard" },
+  { label: "Extended transits for the Sun, Moon and core planets", value: "standard", name: "Standard" },
   { label: "Extended sun transits", value: "sun", name: "Sun" },
   { label: "Transposed natal transits", value: "transposed", name: "Natal" },
 ];
@@ -21,7 +21,7 @@ const tabItems: TabItem[] = [
   { label: "Core planetary positions, transits and special degrees", value: "core", name: "Core", subs: [] },
   { label: "Extended planetary positions over time", value: "extended", name: "Extended", subs: [] },
   { label: "Sun, planetary and natal transits", value: "transitions", name: "Rise / Set", subs: transitModes },
-  { label: "Planetary motions and retrograde phases over time", value: "stations", name: "Motions", subs: [] },
+  { label: "Planetary orbits and retrograde phases over time", value: "stations", name: "Orbits", subs: [] },
 ];
 
 
