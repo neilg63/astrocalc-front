@@ -133,7 +133,7 @@ export const searchLocation = async (place: string, cc = ""): Promise<any> => {
   return await fetchContentGeo(method, params);
 };
 
-export const fetchExtendedTransitions = async (
+export const fetchExtendedTransits = async (
   params: ParamSet,
   sunMode = false
 ): Promise<any> => {
@@ -143,5 +143,5 @@ export const fetchExtendedTransitions = async (
 };
 
 export const fetchSunTransitions = async (params: ParamSet): Promise<any> => {
-  return await fetchExtendedTransitions(params);
+  return await fetchExtendedTransits(params);
 };

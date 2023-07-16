@@ -11,16 +11,16 @@ interface TabItem {
 }
 
 
-const transitionModes: TabItem[] = [
+const transitModes: TabItem[] = [
   { label: "Extended transitions for the Sun, Moon and core planets", value: "standard", name: "Standard" },
-  { label: "Extended sun transitions", value: "sun", name: "Sun" },
-  { label: "Transposed natal transitions", value: "transposed", name: "Natal" },
+  { label: "Extended sun transits", value: "sun", name: "Sun" },
+  { label: "Transposed natal transits", value: "transposed", name: "Natal" },
 ];
 
 const tabItems: TabItem[] = [
-  { label: "Core planetary positions, transitions and special degrees", value: "core", name: "Core", subs: [] },
+  { label: "Core planetary positions, transits and special degrees", value: "core", name: "Core", subs: [] },
   { label: "Extended planetary positions over time", value: "extended", name: "Extended", subs: [] },
-  { label: "Sun, planetary and transposed transitions", value: "transitions", name: "Transitions", subs: transitionModes },
+  { label: "Sun, planetary and transposed transits", value: "transitions", name: "Transits", subs: transitModes },
   { label: "Planetary motions and retrograde phases over time", value: "stations", name: "Motions", subs: [] },
 ];
 

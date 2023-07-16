@@ -1,16 +1,16 @@
 import { Show, createEffect, createSignal } from "solid-js";
-import { fetchChartData, fetchTz, fetchProgressData, fetchExtendedTransitions } from "~/api/fetch";
+import { fetchChartData, fetchTz, fetchProgressData, fetchExtendedTransits } from "~/api/fetch";
 import { formatDate, notEmptyString, yearsAgoDateString } from "~/api/utils";
 import { updateInputValue, updateIntValue } from "~/api/forms";
 import { decPlaces4, degAsLatStr, degAsLngStr, extractPlaceString, hrsMinsToString, smartCastInt } from "~/api/converters";
 import { fetchGeo, getGeoTzOffset } from "~/api/geoloc-utils";
-import { AstroChart, GeoLoc, GeoName, ProgressSet, SunTransitionList, TimeZoneInfo, TransitionList, latLngToLocString } from "~/api/models";
+import { AstroChart, GeoLoc, GeoName, ProgressSet, SunTransitList, TimeZoneInfo, TransitList, latLngToLocString } from "~/api/models";
 import { currentJulianDate, dateStringToJulianDate, julToDateParts, localDateStringToJulianDate } from "~/api/julian-date";
 import ChartData from "./ChartaData";
 import { fromLocal, fromLocalDays, toLocal } from "~/lib/localstore";
 import AyanamashaSelect from "./AyanamshaSelect";
 import OptionSelect from "./OptionSelect";
-import { eqOptions, houseSystems, matchUnitsBySection, showEqOptions, toEqInt, toEqKey, unitKeyToDays, unitKeyToObject } from "~/api/mappings";
+import { eqOptions, houseSystems, matchUnitsBySection, showEqOptions, toEqInt, toEqKey, unitKeyToDays } from "~/api/mappings";
 import { Icon, IconButton } from "@suid/material";
 import DmsInput from "./DmsInput";
 import PlaceNameSelector from "./PlaceNameSelector";
@@ -20,8 +20,8 @@ import TabSelector from "./TabSelector";
 import ButtonIconTrigger from "./ButtonIconTrigger";
 import SlideToggle from "./SlideToggle";
 import ProgressTable from "./ProgressTable";
-import TransitionListTable from "./TransitionListTable";
-import SunTransitionListTable from "./SunTransitionListTable";
+import TransitListTable from "./TransitListTable";
+import SunTransitListTable from "./SunTransitListTable";
 
 interface LocDt {
   dt: string;
@@ -72,8 +72,8 @@ export default function ControlPanel() {
   const [topo, setTopo] = createSignal(false);
   const [unitType, setUnitType] = createSignal("day");
   const { dateTime, timeZone } = buildDateTimeStrings();
-  const [transitionList, setTransitionList] = createSignal(new TransitionList());
-  const [sunTransitionList, setSunTransitionList] = createSignal(new SunTransitionList());
+  const [transitList, setTransitList] = createSignal(new TransitList());
+  const [sunTransitList, setSunTransitList] = createSignal(new SunTransitList());
   const [currDateString, setCurrDateString] = createSignal(dateTime)
   const [currTimeZone, setCurrTimeZone] = createSignal(timeZone);
   const [localPlaceName, setLocalPlaceName] = createSignal('N/A')
@@ -172,9 +172,9 @@ export default function ControlPanel() {
       case "extended":
         fetchProgress();
         break;
-      case "transitions":
+      case "transits":
         const sunMode = mode() === "sun";
-        fetchExtTransitionData(sunMode);
+        fetchExtTransitData(sunMode);
         break;
     }
   }
@@ -253,7 +253,7 @@ export default function ControlPanel() {
       switch (key) {
         case 'core':
         case 'extended':
-        case 'transitions':
+        case 'transits':
           return showData();
         default:
           return true;
@@ -403,22 +403,22 @@ export default function ControlPanel() {
     }
   }
 
-  const fetchExtTransitionData = (sunMode = false) => {
+  const fetchExtTransitData = (sunMode = false) => {
     const { loc, jd } = extractDtLoc();
     const days = numUnits();
     setShowData(false);
-    fetchExtendedTransitions({ jd, loc, days }, sunMode).then(result => {
+    fetchExtendedTransits({ jd, loc, days }, sunMode).then(result => {
       if (result instanceof Object) {
         
         
         if (sunMode) {
-          const sunList = new SunTransitionList(result, tz(), placeString(), numUnits());
-          setSunTransitionList(sunList)
-          toLocal('sun-transitions', sunList);
+          const sunList = new SunTransitList(result, tz(), placeString(), numUnits());
+          setSunTransitList(sunList)
+          toLocal('sun-transits', sunList);
         } else {
-          const trList = new TransitionList(result, tz(), placeString(), numUnits());
-          setTransitionList(trList);
-          toLocal('extended-transitions', trList);
+          const trList = new TransitList(result, tz(), placeString(), numUnits());
+          setTransitList(trList);
+          toLocal('extended-transits', trList);
         }
         setTimeout(() => {
           setShowData(true);
@@ -427,29 +427,29 @@ export default function ControlPanel() {
     });
   }
 
-  const matchTransitionStoreKey = (mode = "standard") => {
+  const matchTransitStoreKey = (mode = "standard") => {
     switch (mode) {
       case 'sun':
-        return 'sun-transitions';
+        return 'sun-transits';
       case 'transposed':
-        return 'transposed-transitions';
+        return 'transposed-transits';
       default:
-        return 'extended-transitions';
+        return 'extended-transits';
     }
   }
 
-  const restoreExtTransitionData = () => {
+  const restoreExtTransitData = () => {
     const modeKey = mode();
-    const cacheKey = matchTransitionStoreKey(modeKey);
+    const cacheKey = matchTransitStoreKey(modeKey);
     const stored = fromLocalDays(cacheKey, 7);
     setShowData(false);
     if (stored.data instanceof Object) {
-      const trList = modeKey === 'standard' ? new TransitionList(stored.data) : modeKey === 'sun' ? new SunTransitionList(stored.data) : null;
-      if (trList instanceof TransitionList || trList instanceof SunTransitionList) {
-        if (trList instanceof TransitionList) {
-          setTransitionList(trList);
-        } else if (trList instanceof SunTransitionList) {
-          setSunTransitionList(trList);
+      const trList = modeKey === 'standard' ? new TransitList(stored.data) : modeKey === 'sun' ? new SunTransitList(stored.data) : null;
+      if (trList instanceof TransitList || trList instanceof SunTransitList) {
+        if (trList instanceof TransitList) {
+          setTransitList(trList);
+        } else if (trList instanceof SunTransitList) {
+          setSunTransitList(trList);
         }
         setNumUnits(trList.days);
         setPlaceString(trList.placeName);
@@ -483,7 +483,7 @@ export default function ControlPanel() {
 
   const showEndDatetIme = () => {
     switch (pane()) {
-      case "transitions":
+      case "transits":
         return mode() === "transposed";
       default:
         return false;
@@ -495,7 +495,7 @@ export default function ControlPanel() {
       case "stations":
       case "extended":
         return true;
-      case "transitions":
+      case "transits":
         return mode() !== "transposed";
       default:
         return false;
@@ -563,8 +563,8 @@ export default function ControlPanel() {
       case 'extended':
         syncProgressSet();
         break;
-      case 'transitions':
-        restoreExtTransitionData();
+      case 'transits':
+        restoreExtTransitData();
         break;
     }
     toLocal('pane', key);
@@ -573,15 +573,15 @@ export default function ControlPanel() {
   const updateMode = (key: string) => {
     setMode(key);
     switch (pane()) {
-      case "transitions":
+      case "transits":
         switch (key) {
           case 'standard':
-            restoreExtTransitionData();
+            restoreExtTransitData();
             break;
           case 'transposed':
             break;
           case 'sun':
-            restoreExtTransitionData();
+            restoreExtTransitData();
             break;
         }
         toLocal('mode', key);
@@ -725,7 +725,7 @@ export default function ControlPanel() {
           <Show when={showNextPrev()}>
             <IconTrigger label="Previous day" color="success" icon="arrow_back" onClick={fetchChartPrev} />
           </Show>
-          <ButtonIconTrigger name="Calculate" color="success" onClick={fetchData} label="Calculate planetary positions, transitions and special degrees" key="submit" size="large" icon="calculate" />
+          <ButtonIconTrigger name="Calculate" color="success" onClick={fetchData} label="Calculate planetary positions, transits and special degrees" key="submit" size="large" icon="calculate" />
           <Show when={showNextPrev()}>
               <IconTrigger label="Next day" color="success" icon="arrow_forward" onClick={fetchChartNext} />
           </Show>
@@ -747,9 +747,9 @@ export default function ControlPanel() {
       <div class="results-pane">
         <Show when={showPane('core')}><ChartData data={chart()} applyAya={applyAya()} /></Show>
         <Show when={showPane('extended')}><div class="extended"><ProgressTable data={progressSet()} /></div></Show>
-        <Show when={showPane('transitions')}><div class="transitions">
-          <Show when={mode() === 'standard'}><TransitionListTable data={transitionList()} /></Show>
-          <Show when={mode() === 'sun'}><SunTransitionListTable data={sunTransitionList()} /></Show>
+        <Show when={showPane('transits')}><div class="transits">
+          <Show when={mode() === 'standard'}><TransitListTable data={transitList()} /></Show>
+          <Show when={mode() === 'sun'}><SunTransitListTable data={sunTransitList()} /></Show>
           </div></Show>
         <Show when={showPane('stations')}><div class="stations">To do: Planetary motions </div></Show>
       </div>

@@ -1,7 +1,6 @@
 import {
   camelToTitle,
   decPlaces6,
-  julToISODate,
   smartCastFloat,
   smartCastInt,
   snakeToWords,
@@ -152,7 +151,7 @@ export class TimeZoneInfo {
   }
 }
 
-export class TransitionSet {
+export class TransitSet {
   key = "";
   prevSet = 0;
   prevRise = 0;
@@ -913,7 +912,7 @@ export class AstroChart {
   bodies: Graha[] = []; // array of celestial bodies
   hsets: HouseSet[] = [];
   indianTime = new ITime();
-  transitions: TransitionSet[] = [];
+  transits: TransitSet[] = [];
   sphutas: SphutaSet[] = [];
   upagrahas: SphutaSet[] = [];
   private ascendantVariants: Variant[] = [];
@@ -927,7 +926,7 @@ export class AstroChart {
         geo,
         indianTime,
         ayanamshas,
-        transitions,
+        transits,
         variants,
         sphutas,
         upagrahas,
@@ -1012,15 +1011,15 @@ export class AstroChart {
           .filter((row) => row instanceof Object)
           .map((row) => row as KeyNumValue);
       }
-      if (transitions instanceof Array) {
-        for (const row of transitions) {
+      if (transits instanceof Array) {
+        for (const row of transits) {
           if (row instanceof Object) {
             if (restoreMode) {
-              this.transitions.push(new TransitionSet(row));
+              this.transits.push(new TransitSet(row));
             } else {
               const { key, items } = row;
               if (items instanceof Array) {
-                this.transitions.push(new TransitionSet(key, items));
+                this.transits.push(new TransitSet(key, items));
               }
             }
           }
@@ -1185,7 +1184,7 @@ export class GeoName {
   }
 }
 
-export class TransitionItem {
+export class TransitItem {
   key = "";
   jd = 0;
   altitude = 0;
@@ -1213,14 +1212,14 @@ export class TransitionItem {
   }
 }
 
-const buildTransitionItems = (items: any[] = [], restoreMode = false) => {
-  let newItems: TransitionItem[] = [];
+const buildTransitItems = (items: any[] = [], restoreMode = false) => {
+  let newItems: TransitItem[] = [];
   if (restoreMode) {
     newItems = items
       .filter((item) => item instanceof Object)
       .map((row) => {
         const { key, jd, altitude } = row;
-        return new TransitionItem(key, jd, altitude);
+        return new TransitItem(key, jd, altitude);
       });
   } else {
     const numItems = items.length;
@@ -1247,22 +1246,22 @@ const buildTransitionItems = (items: any[] = [], restoreMode = false) => {
               } else {
                 currentMaxIndex = newItems.length;
               }
-              newItems.push(new TransitionItem(key, value));
+              newItems.push(new TransitItem(key, value));
               break;
             case "rise":
             case "set":
-              newItems.push(new TransitionItem(key, value));
+              newItems.push(new TransitItem(key, value));
               break;
           }
           if (currentMinIndex >= 0 && minVal !== 0) {
-            if (newItems[currentMinIndex] instanceof TransitionItem) {
+            if (newItems[currentMinIndex] instanceof TransitItem) {
               newItems[currentMinIndex].altitude = minVal;
               currentMinIndex = -1;
               minVal = 0;
             }
           }
           if (currentMaxIndex >= 0 && maxVal !== 0) {
-            if (newItems[currentMaxIndex] instanceof TransitionItem) {
+            if (newItems[currentMaxIndex] instanceof TransitItem) {
               newItems[currentMaxIndex].altitude = maxVal;
               currentMaxIndex = -1;
               maxVal = 0;
@@ -1276,16 +1275,16 @@ const buildTransitionItems = (items: any[] = [], restoreMode = false) => {
   return newItems;
 };
 
-export class TransitionListSet {
+export class TransitListSet {
   key = "";
-  items: TransitionItem[] = [];
+  items: TransitItem[] = [];
 
   constructor(inData: any = null, restoreMode = false) {
     if (inData instanceof Object) {
       const { key, items } = inData;
       const refItems = items instanceof Array ? items : [];
       if (refItems.length > 0) {
-        this.items = buildTransitionItems(refItems, restoreMode);
+        this.items = buildTransitItems(refItems, restoreMode);
       }
       if (notEmptyString(key)) {
         this.key = key;
@@ -1294,7 +1293,7 @@ export class TransitionListSet {
   }
 }
 
-export class SunTransitionList {
+export class SunTransitList {
   key = "su";
 
   jd = 0;
@@ -1307,7 +1306,7 @@ export class SunTransitionList {
 
   days = 0;
 
-  items: TransitionSet[] = [];
+  items: TransitSet[] = [];
 
   constructor(
     inData: any = null,
@@ -1343,7 +1342,7 @@ export class SunTransitionList {
         }
         if (items instanceof Array) {
           this.items = items.map(
-            (row) => new TransitionSet({ key: "su", ...row })
+            (row) => new TransitSet({ key: "su", ...row })
           );
         }
       } else {
@@ -1365,7 +1364,7 @@ export class SunTransitionList {
         }
         if (sunTransitions instanceof Array) {
           this.items = sunTransitions.map(
-            (row) => new TransitionSet({ key: "su", ...row })
+            (row) => new TransitSet({ key: "su", ...row })
           );
         }
       }
@@ -1377,7 +1376,7 @@ export class SunTransitionList {
   }
 }
 
-export class TransitionList {
+export class TransitList {
   jd = 0;
 
   geo = new GeoLoc();
@@ -1386,7 +1385,7 @@ export class TransitionList {
 
   days = 0;
 
-  transitionSets: TransitionListSet[] = [];
+  transitSets: TransitListSet[] = [];
 
   placeName = "";
 
@@ -1431,8 +1430,8 @@ export class TransitionList {
         this.placeName = placeNameString;
       }
       if (transitionSets instanceof Array) {
-        this.transitionSets = transitionSets.map(
-          (tSet) => new TransitionListSet(tSet, restoreMode)
+        this.transitSets = transitionSets.map(
+          (tSet) => new TransitListSet(tSet, restoreMode)
         );
       }
       if (geo instanceof Object) {
@@ -1443,33 +1442,33 @@ export class TransitionList {
 
   get keyMap(): Map<string, number> {
     const mp: Map<string, number> = new Map();
-    this.transitionSets.forEach((tSet) => {
+    this.transitSets.forEach((tSet) => {
       mp.set(tSet.key, tSet.items.length);
     });
     return mp;
   }
 
   get keys() {
-    return this.transitionSets.map((tSet) => tSet.key);
+    return this.transitSets.map((tSet) => tSet.key);
   }
 
   rows() {
-    const rows: TransitionItem[][] = [];
+    const rows: TransitItem[][] = [];
     const keys = this.keys;
     const keyMap = this.keyMap;
     const maxLen = Math.max(...keyMap.values());
-    const emptyRow = keys.map((key) => new TransitionItem(key, 0));
+    const emptyRow = keys.map((key) => new TransitItem(key, 0));
 
     for (let index = 0; index < maxLen; index++) {
       rows.push([...emptyRow]);
       keys.forEach((key, keyIndex) => {
-        const tSet = this.transitionSets[keyIndex];
-        if (tSet instanceof TransitionListSet) {
+        const tSet = this.transitSets[keyIndex];
+        if (tSet instanceof TransitListSet) {
           if (keyMap.has(key)) {
             const num = keyMap.get(key);
             if (typeof num === "number" && index < num) {
-              const currItem = this.transitionSets[keyIndex].items[index];
-              if (currItem instanceof TransitionItem) {
+              const currItem = this.transitSets[keyIndex].items[index];
+              if (currItem instanceof TransitItem) {
                 rows[index][keyIndex] = currItem;
               }
             }
