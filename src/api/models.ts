@@ -1422,15 +1422,21 @@ export class TransitList {
       if (numDays > 0) {
         this.days = smartCastInt(numDays);
       }
-      const { geo, transitionSets } = inData;
+      const { geo, transitionSets, transitSets } = inData;
       if (newTz instanceof Object) {
         this.tz = new TimeZoneInfo(newTz);
       }
       if (notEmptyString(placeNameString)) {
         this.placeName = placeNameString;
       }
-      if (transitionSets instanceof Array) {
-        this.transitSets = transitionSets.map(
+      const refItems =
+        transitSets instanceof Array
+          ? transitSets
+          : transitionSets instanceof Array
+          ? transitionSets
+          : [];
+      if (refItems.length > 0) {
+        this.transitSets = refItems.map(
           (tSet) => new TransitListSet(tSet, restoreMode)
         );
       }

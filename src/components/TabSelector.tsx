@@ -20,7 +20,7 @@ const transitModes: TabItem[] = [
 const tabItems: TabItem[] = [
   { label: "Core planetary positions, transits and special degrees", value: "core", name: "Core", subs: [] },
   { label: "Extended planetary positions over time", value: "extended", name: "Extended", subs: [] },
-  { label: "Sun, planetary and transposed transits", value: "transitions", name: "Transits", subs: transitModes },
+  { label: "Sun, planetary and natal transits", value: "transitions", name: "Rise / Set", subs: transitModes },
   { label: "Planetary motions and retrograde phases over time", value: "stations", name: "Motions", subs: [] },
 ];
 

@@ -40,9 +40,9 @@ export default function SunTransitListTable({ data }: { data: SunTransitList }) 
       case "down":
         return 'down all day';
       case "up_ended":
-        return 'End of daylight';
+        return 'End of polar day';
       case "down_ended":
-        return 'End of darkness';
+        return 'End of polar night';
       default:
         return 'N/A';
     }

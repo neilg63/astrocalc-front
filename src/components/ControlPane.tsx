@@ -98,9 +98,7 @@ export default function ControlPanel() {
     const dt = [dateString(), timeString()].join('T');
     return dateStringToJulianDate(dt, 0 - tzOffset()).toString();
   }
-
   
-
   const fetchChart = (daysOffset = 0) => {
     const { loc, jd } = extractDtLoc();
     const refJd = typeof jd === "number" ? jd + daysOffset : daysOffset;
@@ -172,7 +170,7 @@ export default function ControlPanel() {
       case "extended":
         fetchProgress();
         break;
-      case "transits":
+      case "transitions":
         const sunMode = mode() === "sun";
         fetchExtTransitData(sunMode);
         break;
@@ -253,7 +251,7 @@ export default function ControlPanel() {
       switch (key) {
         case 'core':
         case 'extended':
-        case 'transits':
+        case 'transitions':
           return showData();
         default:
           return true;
@@ -483,7 +481,7 @@ export default function ControlPanel() {
 
   const showEndDatetIme = () => {
     switch (pane()) {
-      case "transits":
+      case "transitions":
         return mode() === "transposed";
       default:
         return false;
@@ -495,7 +493,7 @@ export default function ControlPanel() {
       case "stations":
       case "extended":
         return true;
-      case "transits":
+      case "transitions":
         return mode() !== "transposed";
       default:
         return false;
@@ -563,7 +561,7 @@ export default function ControlPanel() {
       case 'extended':
         syncProgressSet();
         break;
-      case 'transits':
+      case 'transitions':
         restoreExtTransitData();
         break;
     }
@@ -573,7 +571,7 @@ export default function ControlPanel() {
   const updateMode = (key: string) => {
     setMode(key);
     switch (pane()) {
-      case "transits":
+      case "transitions":
         switch (key) {
           case 'standard':
             restoreExtTransitData();
@@ -747,7 +745,7 @@ export default function ControlPanel() {
       <div class="results-pane">
         <Show when={showPane('core')}><ChartData data={chart()} applyAya={applyAya()} /></Show>
         <Show when={showPane('extended')}><div class="extended"><ProgressTable data={progressSet()} /></div></Show>
-        <Show when={showPane('transits')}><div class="transits">
+        <Show when={showPane('transitions')}><div class="transitions">
           <Show when={mode() === 'standard'}><TransitListTable data={transitList()} /></Show>
           <Show when={mode() === 'sun'}><SunTransitListTable data={sunTransitList()} /></Show>
           </div></Show>

@@ -150,7 +150,7 @@ main {
         background-color: rgba($light-grey, 0.25);
       }
     }
-    .transition-type {
+    .transit-type {
       strong {
         display: inline-block;
         margin-right: 0.5em;
@@ -159,13 +159,13 @@ main {
       }
     }
     .mc, .ic {
-      .transition-type strong {
+      .transit-type strong {
         text-transform: uppercase;
       }
     }
     .rise,
     .set {
-      .transition-type strong {
+      .transit-type strong {
         text-transform: capitalize;
         font-style: italic;
       }
