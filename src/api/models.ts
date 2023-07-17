@@ -1353,7 +1353,7 @@ export class SunTransitList {
           );
         }
       } else {
-        const { date, sunTransitions } = inData;
+        const { date, sets } = inData;
         if (date instanceof Object) {
           const { jd } = inData;
           if (isNumeric(jd)) {
@@ -1369,10 +1369,8 @@ export class SunTransitList {
         if (notEmptyString(placeString)) {
           this.placeName = placeString;
         }
-        if (sunTransitions instanceof Array) {
-          this.items = sunTransitions.map(
-            (row) => new TransitSet({ key: "su", ...row })
-          );
+        if (sets instanceof Array) {
+          this.items = sets.map((row) => new TransitSet({ key: "su", ...row }));
         }
       }
     }
@@ -1392,7 +1390,7 @@ export class TransitList {
 
   days = 0;
 
-  transitSets: TransitListSet[] = [];
+  sets: TransitListSet[] = [];
 
   placeName = "";
 
@@ -1429,7 +1427,7 @@ export class TransitList {
       if (numDays > 0) {
         this.days = smartCastInt(numDays);
       }
-      const { geo, transitionSets, transitSets } = inData;
+      const { geo, sets, transitSets } = inData;
       if (newTz instanceof Object) {
         this.tz = new TimeZoneInfo(newTz);
       }
@@ -1439,11 +1437,11 @@ export class TransitList {
       const refItems =
         transitSets instanceof Array
           ? transitSets
-          : transitionSets instanceof Array
-          ? transitionSets
+          : sets instanceof Array
+          ? sets
           : [];
       if (refItems.length > 0) {
-        this.transitSets = refItems.map(
+        this.sets = refItems.map(
           (tSet) => new TransitListSet(tSet, restoreMode)
         );
       }
@@ -1455,14 +1453,14 @@ export class TransitList {
 
   get keyMap(): Map<string, number> {
     const mp: Map<string, number> = new Map();
-    this.transitSets.forEach((tSet) => {
+    this.sets.forEach((tSet) => {
       mp.set(tSet.key, tSet.items.length);
     });
     return mp;
   }
 
   get keys() {
-    return this.transitSets.map((tSet) => tSet.key);
+    return this.sets.map((tSet) => tSet.key);
   }
 
   rows() {
@@ -1475,12 +1473,12 @@ export class TransitList {
     for (let index = 0; index < maxLen; index++) {
       rows.push([...emptyRow]);
       keys.forEach((key, keyIndex) => {
-        const tSet = this.transitSets[keyIndex];
+        const tSet = this.sets[keyIndex];
         if (tSet instanceof TransitListSet) {
           if (keyMap.has(key)) {
             const num = keyMap.get(key);
             if (typeof num === "number" && index < num) {
-              const currItem = this.transitSets[keyIndex].items[index];
+              const currItem = this.sets[keyIndex].items[index];
               if (currItem instanceof TransitItem) {
                 rows[index][keyIndex] = currItem;
               }

@@ -133,17 +133,18 @@ export const searchLocation = async (place: string, cc = ""): Promise<any> => {
   return await fetchContentGeo(method, params);
 };
 
-export const fetchExtendedTransits = async (
+export const fetchExtendedRiseSetTimes = async (
   params: ParamSet,
   sunMode = false
 ): Promise<any> => {
   const filter: Map<string, any> = new Map(Object.entries(params));
-  const method = sunMode ? "sun-transitions" : "transitions";
+  const baseName = "rise-set-times";
+  const method = sunMode ? ["sun", baseName].join("-") : baseName;
   return await fetchContentAstro(method, Object.fromEntries(filter.entries()));
 };
 
-export const fetchSunTransitions = async (params: ParamSet): Promise<any> => {
-  return await fetchExtendedTransits(params);
+export const fetchSunRiseSetTimes = async (params: ParamSet): Promise<any> => {
+  return await fetchExtendedRiseSetTimes(params, true);
 };
 
 export const fetchOrbitPhases = async (

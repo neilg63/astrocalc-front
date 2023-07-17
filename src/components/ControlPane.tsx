@@ -1,10 +1,10 @@
 import { Show, createEffect, createSignal } from "solid-js";
-import { fetchChartData, fetchTz, fetchProgressData, fetchExtendedTransits, fetchOrbitPhases } from "~/api/fetch";
+import { fetchChartData, fetchTz, fetchProgressData, fetchExtendedRiseSetTimes, fetchOrbitPhases } from "~/api/fetch";
 import { formatDate, notEmptyString, yearsAgoDateString } from "~/api/utils";
 import { updateInputValue, updateIntValue } from "~/api/forms";
 import { decPlaces4, degAsLatStr, degAsLngStr, extractPlaceString, hrsMinsToString, smartCastInt, yearToISODateTime } from "~/api/converters";
 import { fetchGeo, getGeoTzOffset } from "~/api/geoloc-utils";
-import { AstroChart, GeoLoc, GeoName, OrbitList, ProgressSet, SunTransitList, TimeZoneInfo, TransitList, latLngToLocString } from "~/api/models";
+import { AstroChart, GeoLoc, OrbitList, ProgressSet, SunTransitList, TimeZoneInfo, TransitList, latLngToLocString } from "~/api/models";
 import { currentJulianDate, dateStringToJulianDate, julToDateParts, localDateStringToJulianDate } from "~/api/julian-date";
 import ChartData from "./ChartaData";
 import { fromLocal, fromLocalDays, toLocal } from "~/lib/localstore";
@@ -173,7 +173,7 @@ export default function ControlPanel() {
         break;
       case "transitions":
         const sunMode = mode() === "sun";
-        fetchExtTransitData(sunMode);
+        fetchExtRSData(sunMode);
         break;
     }
   }
@@ -402,11 +402,11 @@ export default function ControlPanel() {
     }
   }
 
-  const fetchExtTransitData = (sunMode = false) => {
+  const fetchExtRSData = (sunMode = false) => {
     const { loc, jd } = extractDtLoc();
     const days = numUnits();
     setShowData(false);
-    fetchExtendedTransits({ jd, loc, days }, sunMode).then(result => {
+    fetchExtendedRiseSetTimes({ jd, loc, days }, sunMode).then(result => {
       if (result instanceof Object) {
         
         
