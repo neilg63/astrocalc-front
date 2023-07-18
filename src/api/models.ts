@@ -912,7 +912,7 @@ export class AstroChart {
   bodies: Graha[] = []; // array of celestial bodies
   hsets: HouseSet[] = [];
   indianTime = new ITime();
-  transits: TransitSet[] = [];
+  riseSets: TransitSet[] = [];
   sphutas: SphutaSet[] = [];
   upagrahas: SphutaSet[] = [];
   private ascendantVariants: Variant[] = [];
@@ -926,7 +926,7 @@ export class AstroChart {
         geo,
         indianTime,
         ayanamshas,
-        transits,
+        riseSets,
         transitions,
         variants,
         sphutas,
@@ -1012,21 +1012,16 @@ export class AstroChart {
           .filter((row) => row instanceof Object)
           .map((row) => row as KeyNumValue);
       }
-      const refItems =
-        transitions instanceof Array
-          ? transitions
-          : transits instanceof Array
-          ? transits
-          : [];
+      const refItems = riseSets instanceof Array ? riseSets : [];
       if (refItems instanceof Array) {
         for (const row of refItems) {
           if (row instanceof Object) {
             if (restoreMode) {
-              this.transits.push(new TransitSet(row));
+              this.riseSets.push(new TransitSet(row));
             } else {
               const { key, items } = row;
               if (items instanceof Array) {
-                this.transits.push(new TransitSet(key, items));
+                this.riseSets.push(new TransitSet(key, items));
               }
             }
           }

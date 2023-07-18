@@ -65,7 +65,7 @@ export default function ChartData({ data, applyAya }: {data: AstroChart, applyAy
       <IndianTimeGroup data={data.indianTime} />
     </div>
     <PositionTable data={data} applyAya={applyAya} />
-    <TransitTable items={data.transits} tzOffset={data.tzOffsetSeconds} />
+    <TransitTable items={data.riseSets} tzOffset={data.tzOffsetSeconds} />
     <div class="extra-data-row flex flex-row">
       <Show when={data.hasUpagrahas}>
         <For each={data.upagrahas}>
