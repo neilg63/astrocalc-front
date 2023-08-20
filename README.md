@@ -1,6 +1,6 @@
 # AstroCalc UI
 
-This is a frontend UI for [AstroCalc](https://github.com/neilg63/astro-calc), an astrological calculation server built with Rust and Swiss Ephemeris.
+This is a frontend UI for [AstroCalcApi](https://github.com/neilg63/astro-calca-api), an astrological calculation server built with Rust and Swiss Ephemeris.
 
 ## SolidStart
 
