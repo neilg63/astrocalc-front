@@ -463,7 +463,9 @@ export default function ControlPanel() {
     const cacheKey = matchTransitStoreKey(modeKey);
     const stored = fromLocalDays(cacheKey, 7);
     setShowData(false);
-    if (stored.data instanceof Object) {
+    const hasStored = stored.data instanceof Object;
+    let hasData = false;
+    if (hasStored) {
       const trList = modeKey === 'standard' ? new TransitList(stored.data) : modeKey === 'sun' ? new SunTransitList(stored.data) : null;
       if (trList instanceof TransitList || trList instanceof SunTransitList) {
         if (trList instanceof TransitList) {
@@ -471,15 +473,22 @@ export default function ControlPanel() {
         } else if (trList instanceof SunTransitList) {
           setSunTransitList(trList);
         }
-        setNumUnits(trList.days);
-        setPlaceString(trList.placeName);
-        const { lat, lng } = trList.geo;
-        syncLatLng(lat, lng);
-        updateDateTimeControls(trList.jd, trList.tz.utcOffset);
-        setTimeout(() => {
-          setShowData(true);
-        }, 250)
+        hasData = trList.hasData;
+        if (hasData) {
+          setNumUnits(trList.days);
+          setPlaceString(trList.placeName);
+          const { lat, lng } = trList.geo;
+          syncLatLng(lat, lng);
+          updateDateTimeControls(trList.jd, trList.tz.utcOffset);
+          setTimeout(() => {
+            setShowData(true);
+          }, 250)
+        }
       }
+    }
+    console.log({hasData})
+    if (!hasData) {
+      fetchData();
     }
   }
 

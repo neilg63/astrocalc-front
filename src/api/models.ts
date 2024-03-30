@@ -168,42 +168,7 @@ export class TransitSet {
     if (typeof keyRef === "string") {
       this.key = keyRef;
       for (const row of items) {
-        switch (row.key) {
-          case "prev_set":
-          case "prevSet":
-            this.prevSet = row.value;
-            break;
-          case "prev_rise":
-          case "prevRise":
-            this.prevRise = row.value;
-            break;
-          case "rise":
-            this.rise = row.value;
-            break;
-          case "ic":
-            this.ic = row.value;
-            break;
-          case "set":
-            this.set = row.value;
-            break;
-          case "mc":
-            this.mc = row.value;
-            break;
-          case "next_rise":
-          case "nextRise":
-            this.nextRise = row.value;
-            break;
-          case "next_set":
-          case "nextSet":
-            this.nextSet = row.value;
-            break;
-          case "min":
-            this.min = row.value;
-            break;
-          case "max":
-            this.max = row.value;
-            break;
-        }
+        this.addItem(row)
       }
     } else if (keyRef instanceof Object) {
       Object.entries(keyRef).forEach(([key, value]) => {
@@ -227,6 +192,45 @@ export class TransitSet {
           }
         }
       });
+    }
+  }
+
+  addItem(row: KeyNumValue) {
+    switch (row.key) {
+      case "prev_set":
+      case "prevSet":
+        this.prevSet = row.value;
+        break;
+      case "prev_rise":
+      case "prevRise":
+        this.prevRise = row.value;
+        break;
+      case "rise":
+        this.rise = row.value;
+        break;
+      case "ic":
+        this.ic = row.value;
+        break;
+      case "set":
+        this.set = row.value;
+        break;
+      case "mc":
+        this.mc = row.value;
+        break;
+      case "next_rise":
+      case "nextRise":
+        this.nextRise = row.value;
+        break;
+      case "next_set":
+      case "nextSet":
+        this.nextSet = row.value;
+        break;
+      case "min":
+        this.min = row.value;
+        break;
+      case "max":
+        this.max = row.value;
+        break;
     }
   }
 
@@ -1348,7 +1352,7 @@ export class SunTransitList {
           );
         }
       } else {
-        const { date, sets } = inData;
+        const { date, sets, items } = inData;
         if (date instanceof Object) {
           const { jd } = inData;
           if (isNumeric(jd)) {
@@ -1364,8 +1368,68 @@ export class SunTransitList {
         if (notEmptyString(placeString)) {
           this.placeName = placeString;
         }
-        if (sets instanceof Array) {
-          this.items = sets.map((row) => new TransitSet({ key: "su", ...row }));
+        const itemRows = sets instanceof Array ? sets : items instanceof Array ? items : [];
+        if (itemRows.length > 0) {
+          const numItemRows = itemRows.length;
+          let cellKeys: string[] = [];
+          let startPeriodJd = 0;
+          const maxCellKeys = this.keys.length;
+          let cellSet = new TransitSet("su");
+          for (let i = 0; i < numItemRows; i++) {
+            const r = itemRows[i];
+            if (cellKeys.includes("mc") === false && cellKeys.includes("ic") === false && ["mc", "ic"].includes(r.key)) {
+              startPeriodJd = r.value;
+            }
+            cellSet.addItem(r);
+            cellKeys.push(r.key);
+            if (cellKeys.length === maxCellKeys || (cellKeys.length >= 4 && r.value >= (startPeriodJd + 1.1) )) {
+              const prevIndex = this.items.length - 1;
+              if ((cellSet.prevRise < 1 || cellSet.prevSet < 1) && prevIndex >= 0) {  
+                for (let j = prevIndex; j >= 0; j--) {
+                  const pr = this.items[j];
+                  if (pr.rise > 0) {
+                    cellSet.prevRise = pr.rise;
+                  }
+                  if (pr.set > 0) {
+                    cellSet.prevSet = pr.set;
+                  }
+                  if (cellSet.prevSet >0 && cellSet.prevRise > 0) {
+                    break;
+                  }
+                }
+              }
+              if (cellSet.nextRise < 1 || cellSet.nextSet < 1) {
+                if (prevIndex >= 0) {
+                  const pi = this.items[prevIndex];
+                  if (pi.nextSet > 0) {
+                    cellSet.nextSet = pi.nextSet;
+                  }
+                  if (pi.nextRise > 0) {
+                    cellSet.nextRise = pi.nextRise;
+                  }
+                }
+                if (cellSet.nextRise  < 1 || cellSet.nextSet < 1) {
+                  for (let j = i + 1; j < numItemRows; j++) {
+                    const r2 = itemRows[j];
+                    switch (r.key) {
+                      case "set":
+                        cellSet.nextSet = r2.value;
+                        break;
+                      case "rise":
+                        cellSet.nextRise = r2.value;
+                        break;
+                    }
+                    if (cellSet.nextSet > 0 && cellSet.nextRise > 0) {
+                      break;
+                    }
+                  }
+                }
+              }
+              this.items.push(cellSet);
+              cellKeys = [];
+              cellSet = new TransitSet("su");
+            }
+          }
         }
       }
     }
@@ -1373,6 +1437,10 @@ export class SunTransitList {
 
   get keys(): string[] {
     return ["prev", "rise", "mc", "max", "set", "ic", "min", "next"];
+  }
+
+  get hasData() {
+    return this.items.length > 0;
   }
 }
 
@@ -1456,6 +1524,10 @@ export class TransitList {
 
   get keys() {
     return this.sets.map((tSet) => tSet.key);
+  }
+
+  get hasData() {
+    return this.sets.length > 0;
   }
 
   rows() {
