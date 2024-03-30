@@ -486,7 +486,6 @@ export default function ControlPanel() {
         }
       }
     }
-    console.log({hasData})
     if (!hasData) {
       fetchData();
     }
