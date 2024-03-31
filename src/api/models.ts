@@ -1382,9 +1382,9 @@ export class SunTransitList {
             }
             cellSet.addItem(r);
             cellKeys.push(r.key);
-            if (cellKeys.length === maxCellKeys || (cellKeys.length >= 4 && r.value >= (startPeriodJd + 1.1) )) {
+            if (r.key === "max") {
               const prevIndex = this.items.length - 1;
-              if ((cellSet.prevRise < 1 || cellSet.prevSet < 1) && prevIndex >= 0) {  
+              if ((cellSet.rise < 1 || cellSet.set < 1) && prevIndex >= 0) {  
                 for (let j = prevIndex; j >= 0; j--) {
                   const pr = this.items[j];
                   if (pr.rise > 0) {
