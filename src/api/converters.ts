@@ -1197,7 +1197,23 @@ export const extractPlaceString = (placenames: any[]) => {
     const numPns = placenames.length;
     const lastPn = placenames[numPns - 1];
     if (lastPn instanceof Object && notEmptyString(lastPn.name)) {
-      return `${lastPn.name}, ${lastPn.adminName} (${lastPn.countryCode})`;
+      let adminStr = ' ';
+      let cc = ' ';
+      if (numPns > 1) {
+        const ccRow = placenames[0];
+        if (ccRow instanceof Object && notEmptyString(ccRow.name)) {
+          if (ccRow.name.length < 4) {
+            cc = ` (${ccRow.name})`;
+          }
+        }
+      }
+      if (numPns > 2) {
+        const admRow = placenames.find(row => row.fcode.startsWith('A'));
+        if (admRow) {
+          adminStr = ` , ${admRow.name}`
+        }
+      }
+      return `${lastPn.name}${adminStr}${cc}`;
     }
   }
   return "N/A";
