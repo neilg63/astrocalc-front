@@ -794,7 +794,7 @@ export class Graha extends Body {
   }
 }
 
-export class ITime {
+/* export class ITime {
   dayBefore = true;
   isDayTime = true;
   dayLength = 0;
@@ -808,7 +808,6 @@ export class ITime {
   year = 0;
 
   constructor(inData: any = null) {
-    console.log(inData)
     if (inData instanceof Object) {
       Object.entries(inData).forEach(([key, val]) => {
         switch (key) {
@@ -844,7 +843,7 @@ export class ITime {
   get dayLengthSeconds(): number {
     return this.dayLength * 24 * 60 * 60;
   }
-}
+} */
 
 export class PointSet {
   armc = 0;
