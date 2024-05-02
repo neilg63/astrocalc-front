@@ -2,15 +2,15 @@ import { Show, createEffect, createSignal } from "solid-js";
 import { fetchChartData, fetchTz, fetchProgressData, fetchExtendedRiseSetTimes, fetchOrbitPhases } from "~/api/fetch";
 import { formatDate, notEmptyString, yearsAgoDateString } from "~/api/utils";
 import { updateInputValue, updateIntValue } from "~/api/forms";
-import { decPlaces4, degAsLatStr, degAsLngStr, extractPlaceString, hrsMinsToString, smartCastInt, yearToISODateTime } from "~/api/converters";
+import { decPlaces4, degAsLatStr, degAsLngStr, extractPlaceNameString, hrsMinsToString, smartCastInt, yearToISODateTime } from "~/api/converters";
 import { fetchGeo, getGeoTzOffset } from "~/api/geoloc-utils";
-import { AstroChart, GeoLoc, OrbitList, ProgressSet, SunTransitList, TimeZoneInfo, TransitList, latLngToLocString } from "~/api/models";
+import { AstroChart, GeoLoc, ProgressSet, SunTransitList, TimeZoneInfo, TransitList, latLngToLocString } from "~/api/models";
 import { currentJulianDate, dateStringToJulianDate, julToDateParts, localDateStringToJulianDate } from "~/api/julian-date";
 import ChartData from "./ChartaData";
-import { fromLocal, fromLocalDays, toLocal } from "~/lib/localstore";
+import { clearLocal, fromLocal, fromLocalDays, toLocal } from "~/lib/localstore";
 import AyanamashaSelect from "./AyanamshaSelect";
 import OptionSelect from "./OptionSelect";
-import { eqOptions, houseSystems, matchUnitsBySection, showEqOptions, toEqInt, toEqKey, unitKeyToDays } from "~/api/mappings";
+import { eqOptions, houseSystems, matchUnitsBySection, showEqOptions, toEqInt, toEqKey, unitKeyToDays, LocalDateTimeParts, LocDt } from "~/api/mappings";
 import { Icon, IconButton } from "@suid/material";
 import DmsInput from "./DmsInput";
 import PlaceNameSelector from "./PlaceNameSelector";
@@ -22,18 +22,6 @@ import SlideToggle from "./SlideToggle";
 import ProgressTable from "./ProgressTable";
 import TransitListTable from "./TransitListTable";
 import SunTransitListTable from "./SunTransitListTable";
-
-interface LocDt {
-  dt: string;
-  loc: string;
-  jd?: number;
-}
-
-interface LocalDateTimeParts {
-  dateTime: string;
-  timeZone: string;
-  periodName?: string;
-}
 
 const buildDateTimeStrings = (): LocalDateTimeParts => {
   const dateParts = new Date().toString().split(" ");
@@ -62,11 +50,11 @@ export default function ControlPanel() {
   const [init, setInit] = createSignal(false);
   const [lat, setLat] = createSignal(0);
   const [lng, setLng] = createSignal(0);
-  const [numUnits, setNumUnits] = createSignal(20);
+  const [numUnits, setNumUnits] = createSignal(31);
   const [frequency, setFrequency] = createSignal(2);
   const [tzOffset, setTzOffset] = createSignal(0);
-  const [applyAya, setApplyAya] = createSignal(true);
-  const [ayaKey, setAyaKey] = createSignal("tc");
+  const [applyAya, setApplyAya] = createSignal(false);
+  const [ayaKey, setAyaKey] = createSignal("");
   const [hsys, setHsys] = createSignal("W");
   const [eq, setEq] = createSignal('ecliptic');
   const [topo, setTopo] = createSignal(false);
@@ -74,13 +62,12 @@ export default function ControlPanel() {
   const { dateTime, timeZone } = buildDateTimeStrings();
   const [transitList, setTransitList] = createSignal(new TransitList());
   const [sunTransitList, setSunTransitList] = createSignal(new SunTransitList());
-  const [orbitList, setOrbitList] = createSignal(new OrbitList());
   const [currDateString, setCurrDateString] = createSignal(dateTime)
   const [currTimeZone, setCurrTimeZone] = createSignal(timeZone);
   const [localPlaceName, setLocalPlaceName] = createSignal('N/A')
   const [localZoneAbbr, setLocalZoneAbbr] = createSignal('')
   const [pane, setPane] = createSignal('core')
-  const [mode, setMode] = createSignal('standard');
+  // const [mode, setMode] = createSignal('standard');
   
   // const [json, setJson] = createSignal('')
   
@@ -109,11 +96,10 @@ export default function ControlPanel() {
       const nextDt = new Date(refTs).toISOString().split("T").shift();
       setDateString(nextDt as string)
     }
-    fetchChartData({ ct: 1, jd: refJd, loc, it: 1, aya: ayaKey(), upa: 1, jyo: 1, hsys: hsys(), topo: 2 }).then((data: any) => {
+    fetchChartData({ ct: 1, jd: refJd, loc, it: 1, aya: ayaKey(), hsys: hsys(), topo: 2 }).then((data: any) => {
       if (data instanceof Object && data.date.jd > 0) {
         const chart = new AstroChart(data, tz(), placeString());
         setChart(chart);
-        // setJson(str)
         setShowData(true);
         toLocal("current-chart", chart);
         toLocal("core-jd", { jd, tz: chart.tz });
@@ -164,15 +150,18 @@ export default function ControlPanel() {
   }
 
   const fetchData = () => {
-    switch (pane()) {
+    updateGeoTz(false);
+    const paneKey = pane();
+    switch (paneKey) {
       case "core":
         fetchChart(0);
         break;
       case "extended":
         fetchProgress();
         break;
-      case "transitions":
-        const sunMode = mode() === "sun";
+      case "transitions_sun":
+      case "transitions_bodies":
+        const sunMode = paneKey.endsWith("_sun");
         fetchExtRSData(sunMode);
         break;
     }
@@ -214,9 +203,17 @@ export default function ControlPanel() {
     setTopo(topo() !== true)
   }
 
+  const clearDataSets = () => {
+    const cKeys = ["current-chart", "progress-sets", "sun-transits",  "extended-transits"];
+    for (const ck in cKeys) {
+      clearLocal(ck);
+    }
+  }
+
   const updateGeoTz = (addPlaceNames = false) => {
     const { loc, dt } = extractDtLoc();
     const addPn = addPlaceNames === true;
+    clearDataSets();
     fetchTz(dt, loc, addPn).then((data) => {
       if (data instanceof Object) {
         const keys = Object.keys(data);
@@ -226,9 +223,9 @@ export default function ControlPanel() {
           setTz(new TimeZoneInfo(tz));
           toLocal("current-tz", tz);
         }
-        if (addPn && keys.includes("placenames")) {
-          if (data.placenames instanceof Array) {
-            const plStr = extractPlaceString(data.placenames);
+        if (addPn && keys.includes("place")) {
+          if (data.place instanceof Object) {
+            const plStr = extractPlaceNameString(data.place);
             setPlaceString(plStr);
           }
         }
@@ -252,7 +249,8 @@ export default function ControlPanel() {
       switch (key) {
         case 'core':
         case 'extended':
-        case 'transitions':
+        case 'transitions_sun':
+        case 'transitions_bodies':
           return showData();
         default:
           return true;
@@ -262,15 +260,16 @@ export default function ControlPanel() {
     }
   }
 
-  const updateApplyAya = () => {
+  const updateApplyAya = (ak: string) => {
     setShowData(false);
-    const newVal = applyAya() !== true;
+    const aKey = notEmptyString(ak) ? ak : ayaKey()
+    const newVal = notEmptyString(aKey,1) && aKey !== "tropical";
     setApplyAya(newVal);
     if (pane() === 'extended') {
       progressSet().applyOverride(!newVal);
     }
     setTimeout(() => {
-      setShowData(true);
+      fetchChart();
     }, 250)
   }
 
@@ -293,7 +292,12 @@ export default function ControlPanel() {
     }
   }
 
-  const selectAyaOpt = (e: Event) => selectListOption(e, setAyaKey);
+  const updateAyaKey = (ak: string) => {
+    setAyaKey(ak);
+    updateApplyAya(ak);
+  }
+
+  const selectAyaOpt = (e: Event) => selectListOption(e, updateAyaKey);
 
   // const selectHsys = (e: Event) => selectListOption(e, setHsys);
 
@@ -312,9 +316,9 @@ export default function ControlPanel() {
           const dtStr = new Date().toISOString().split('.').shift();
           const locStr = latLngToLocString(latitude, longitude);
           fetchTz(dtStr as string, locStr, true).then(result => {
-            const { time, placenames } = result;
-            if (placenames instanceof Array) {
-              const plStr = extractPlaceString(placenames);
+            const { time, place } = result;
+            if (place instanceof Object) {
+              const plStr = extractPlaceNameString(place);
               setLocalPlaceName(plStr);
               const hasPlace = notEmptyString(placeString());
               if (!hasPlace && defLat() === lat()) {
@@ -324,6 +328,12 @@ export default function ControlPanel() {
             if (time instanceof Object) {
               const { abbreviation } = time;
               setLocalZoneAbbr(abbreviation);
+            }
+            let c = chart();
+            if (!c.isValid) {
+              setTimeout(() => {
+                fetchChart()
+              }, 250)
             }
           })
         }
@@ -354,9 +364,11 @@ export default function ControlPanel() {
     }
   } */
 
-  const updateFromChart = (data: any = null) => {
+  const updateFromChart = (data: any = null): boolean => {
+    let valid = false;
     const chart = new AstroChart(data);
-    if (chart.bodies.length > 0) {
+    const panelData = extractDtLoc();
+    if (chart.bodies.length > 0 && chart.isSame(panelData)) {
       setChart(chart);
       syncLatLng(chart.geo.lat, chart.geo.lng);
       setTimeout(openChart, 500);
@@ -365,40 +377,53 @@ export default function ControlPanel() {
         setPlaceString(chart.placeName);
       }
     }
+    return valid;
   }
 
   const syncChart = () => {
     const storedChart = retrieveChartData();
+    let hasStoreData = false;
     if (storedChart.exists) {
-      updateFromChart(storedChart.data);
+      hasStoreData = updateFromChart(storedChart.data);
+    } 
+    if (!hasStoreData) {
+      fetchChart(0);
     }
   }
 
   const syncProgressSet = () => {
     const stored = fromLocalDays('progress-set', 7);
+    let hasStored = false;
     setShowData(false);
     if (stored.data instanceof Object) {
       const { jd, items } = stored.data;
-      if (items instanceof Array && jd > 0) {
+      const panelData = extractDtLoc();
+      if (items instanceof Array && jd > 0) {  
         const pSet = new ProgressSet(stored.data);
-        setTimeout(() => {
-          setShowData(pSet.hasData);
-        }, 500);
-        setEq(toEqKey(pSet.coordSystem));
-        setTopo(pSet.topoMode);
-        if (pSet.perDay > 0) {
-          setNumUnits(pSet.days);
-          setFrequency(pSet.perDay);
+        if (pSet.isSame(panelData)) {
+          hasStored = true;
+          setTimeout(() => {
+            setShowData(pSet.hasData);
+          }, 500);
+          setEq(toEqKey(pSet.coordSystem));
+          setTopo(pSet.topoMode);
+          if (pSet.perDay > 0) {
+            setNumUnits(pSet.days);
+            setFrequency(pSet.perDay);
+          }
+          setUnitType(pSet.unit);
+          setNumUnits(pSet.numUnits);
+          setFrequency(pSet.perUnit);
+          applyProgressSet(pSet);
+          setPlaceString(pSet.placeNames);
+          const { lat, lng } = pSet.geo;
+          syncLatLng(lat, lng);
+          updateDateTimeControls(pSet.jd, pSet.tz.utcOffset);
         }
-        setUnitType(pSet.unit);
-        setNumUnits(pSet.numUnits);
-        setFrequency(pSet.perUnit);
-        applyProgressSet(pSet);
-        setPlaceString(pSet.placeNames);
-        const { lat, lng } = pSet.geo;
-        syncLatLng(lat, lng);
-        updateDateTimeControls(pSet.jd, pSet.tz.utcOffset);
       }
+    }
+    if (!hasStored) {
+      fetchProgress();
     }
   }
 
@@ -458,15 +483,18 @@ export default function ControlPanel() {
     }
   }
 
-  const restoreExtTransitData = () => {
-    const modeKey = mode();
+  const restoreExtTransitData = (key = '') => {
+    const paneKey = notEmptyString(key)? key :  pane();
+    const modeKey = paneKey.endsWith("_sun") ? "sun" : "standard";
     const cacheKey = matchTransitStoreKey(modeKey);
     const stored = fromLocalDays(cacheKey, 7);
     setShowData(false);
     const hasStored = stored.data instanceof Object;
+    let hasStoredData = false;
     let hasData = false;
     if (hasStored) {
       const trList = modeKey === 'standard' ? new TransitList(stored.data) : modeKey === 'sun' ? new SunTransitList(stored.data) : null;
+      const panelData = extractDtLoc();
       if (trList instanceof TransitList || trList instanceof SunTransitList) {
         if (trList instanceof TransitList) {
           setTransitList(trList);
@@ -475,18 +503,21 @@ export default function ControlPanel() {
         }
         hasData = trList.hasData;
         if (hasData) {
-          setNumUnits(trList.days);
-          setPlaceString(trList.placeName);
-          const { lat, lng } = trList.geo;
-          syncLatLng(lat, lng);
-          updateDateTimeControls(trList.jd, trList.tz.utcOffset);
-          setTimeout(() => {
-            setShowData(true);
-          }, 250)
+          if (trList.isSame(panelData)) {
+            hasStoredData = true;
+            setNumUnits(trList.days);
+            setPlaceString(trList.placeName);
+            const { lat, lng } = trList.geo;
+            syncLatLng(lat, lng);
+            updateDateTimeControls(trList.jd, trList.tz.utcOffset);
+            setTimeout(() => {
+              setShowData(true);
+            }, 250)
+          }
         }
       }
     }
-    if (!hasData) {
+    if (!hasStoredData) {
       fetchData();
     }
   }
@@ -494,6 +525,7 @@ export default function ControlPanel() {
   const resetTime = () => {
     const jdObj = currentJulianDate();
     const parts = jdObj.toISOSimple().split("T");
+    clearDataSets();
     setDateString(parts[0]);
     setTimeString(parts[1]);
     setTimeout(() => {
@@ -511,8 +543,8 @@ export default function ControlPanel() {
 
   const showEndDatetIme = () => {
     switch (pane()) {
-      case "transitions":
-        return mode() === "transposed";
+      case "stations":
+        return true;
       default:
         return false;
     }
@@ -522,9 +554,9 @@ export default function ControlPanel() {
     switch (pane()) {
       case "stations":
       case "extended":
+      case "transitions_sun":
+      case "transitions_bodies":
         return true;
-      case "transitions":
-        return mode() !== "transposed";
       default:
         return false;
     }
@@ -564,6 +596,7 @@ export default function ControlPanel() {
 
   const updateDateTimeControls = (jd = 0, tzOffset = 0) => {
     if (jd > 0) {
+      clearDataSets();
       const dtParts = julToDateParts(jd, tzOffset).toISOSimple().split("T");
       setDateString(dtParts[0]);
       setTimeString(dtParts[1]);
@@ -585,40 +618,21 @@ export default function ControlPanel() {
     setPane(key);
     switch (key) {
       case 'core':
-        // syncCoreDateTime();
         syncChart();
         break;
       case 'extended':
         syncProgressSet();
         break;
-      case 'transitions':
-        restoreExtTransitData();
+      case 'transitions_sun':
+      case 'transitions_bodies':
+        restoreExtTransitData(key);
         break;
     }
     toLocal('pane', key);
   }
 
-  const updateMode = (key: string) => {
-    setMode(key);
-    switch (pane()) {
-      case "transitions":
-        switch (key) {
-          case 'standard':
-            restoreExtTransitData();
-            break;
-          case 'transposed':
-            break;
-          case 'sun':
-            restoreExtTransitData();
-            break;
-        }
-        toLocal('mode', key);
-        break;
-    }
-  }
-
   const astroControlClasses = (): string => {
-    const cls = ["top-controls", "grid", "top-grid"];
+    const cls = ["top-controls", "top-grid"];
     if (applyAya()) {
       cls.push("sidereal-mode");
     } else {
@@ -652,9 +666,7 @@ export default function ControlPanel() {
       if (geoData.valid) {
         const { lat, lng, name } = geoData.data;
         if (notEmptyString(name)) {
-          if (!chartStore.exists) {
-            syncLatLng(lat, lng);
-          }
+          syncLatLng(lat, lng);
           setPlaceString(name);
         }
       }
@@ -738,17 +750,14 @@ export default function ControlPanel() {
         </div>
         <div class="option-bar flex flex-row">
           <Show when={showAyaSelector()}>
-              <SlideToggle offName="tropical" onName="sidereal" isOn={applyAya} onChange={updateApplyAya} key="sidereal-toggle" />
             <AyanamashaSelect value={ayaKey()} onSelect={(e: Event) => selectAyaOpt(e)} />
           </Show>
             <Show when={showHouseSelector()}><OptionSelect name="hsys" label="House system" options={houseSystems} value={hsys} setValue={setHsys} /></Show>
             <Show when={showExtraAstroOptions()}>
               <OptionSelect name="hsys" label="Coordinate system" options={eqOptions} value={eq} setValue={updateEq} />
-              <SlideToggle offName="geocentric" onName="topocentric" isOn={topo} onChange={updateTopo} key="topo-toggle" />
+              <SlideToggle offName="geo" onName="topo" isOn={topo} onChange={updateTopo} key="topo-toggle" />
             </Show>
         </div>
-          <TabSelector pane={pane} setPane={updatePane} />
-          <TabSelector pane={mode} setPane={updateMode} parent={pane} />
         <div class="actions flex flex-row">
           <Show when={showNextPrev()}>
             <IconTrigger label="Previous day" color="success" icon="arrow_back" onClick={fetchChartPrev} />
@@ -759,6 +768,7 @@ export default function ControlPanel() {
           </Show>
         </div>
       </fieldset>
+      <TabSelector pane={pane} setPane={updatePane} />
       <div class="status-row flex flex-row">
         <h4 class="space-parts">
           <time class="date">{formatDate(dateString())}</time>&nbsp;
@@ -775,9 +785,13 @@ export default function ControlPanel() {
       <div class="results-pane">
         <Show when={showPane('core')}><ChartData data={chart()} applyAya={applyAya()} /></Show>
         <Show when={showPane('extended')}><div class="extended"><ProgressTable data={progressSet()} /></div></Show>
-        <Show when={showPane('transitions')}><div class="transitions">
-          <Show when={mode() === 'standard'}><TransitListTable data={transitList()} /></Show>
-          <Show when={mode() === 'sun'}><SunTransitListTable data={sunTransitList()} /></Show>
+        <Show when={showPane('transitions_sun')}><div class="transitions sun-rise-sets">
+          
+          <SunTransitListTable data={sunTransitList()} />
+          </div>
+        </Show>
+        <Show when={showPane('transitions_bodies')}><div class="transitions bodies-rise-sets">
+        <TransitListTable data={transitList()} />
           </div></Show>
         <Show when={showPane('stations')}><div class="stations">To do: Planetary motions </div></Show>
       </div>

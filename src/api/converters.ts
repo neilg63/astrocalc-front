@@ -1192,7 +1192,7 @@ export const percent = (proportion = 0, places = 3): string => {
   return decPlaces(perc, places) + "%";
 };
 
-export const extractPlaceString = (placenames: any[]) => {
+/* export const extractPlaceString = (placenames: any[]) => {
   if (placenames instanceof Array) {
     const numPns = placenames.length;
     const lastPn = placenames[numPns - 1];
@@ -1214,6 +1214,26 @@ export const extractPlaceString = (placenames: any[]) => {
         }
       }
       return `${lastPn.name}${adminStr}${cc}`;
+    }
+  }
+  return "N/A";
+}; */
+
+export const extractPlaceNameString = (place: any = null) => {
+  if (place instanceof Object) {
+    const {
+      name, adminName, region, cc
+    } = place;
+    if (notEmptyString(name)) {
+      const hasRegion = notEmptyString(region);
+      const adminParts = hasRegion ? [region.trim()] : [];
+      if (notEmptyString(adminName) && sanitize(adminName) !== sanitize(region)) {
+        adminParts.unshift(adminName)
+      }
+      let adminStr = adminParts.length > 0 ? `, ${adminParts.join(", ")}` : "";
+      const hasUKCountry = hasRegion && ['UK', "GB"].includes(cc) && region.trim().endsWith('land');
+      const ccStr = !hasUKCountry && notEmptyString(cc) ? ` (${cc})` : "";
+      return `${name}${adminStr}${ccStr}`;
     }
   }
   return "N/A";

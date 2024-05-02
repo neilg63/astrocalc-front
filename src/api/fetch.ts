@@ -111,7 +111,7 @@ export const fetchTz = async (
   loc: string,
   addPlaceNames = false
 ): Promise<any> => {
-  const method = addPlaceNames ? `geotime` : `timezone`;
+  const method = addPlaceNames ? `gtz` : `timezone`;
   const params = {
     dt,
     loc,

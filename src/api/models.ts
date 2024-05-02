@@ -7,7 +7,7 @@ import {
   subtractLng360,
   zeroPad,
 } from "./converters";
-import { matchUnitKeyByValue, toEqInt } from "./mappings";
+import { matchUnitKeyByValue, toEqInt, LocDt } from "./mappings";
 import { isNumeric, notEmptyString } from "./utils";
 
 export interface KeyNumValue {
@@ -504,6 +504,10 @@ export class Body {
   get showLatSpeed(): boolean {
     return this.latSpeed !== 0 || this.isPlanet;
   }
+
+  get showAltitude(): boolean {
+    return this.key !== "as";
+  }
 }
 
 export class BodySet {
@@ -708,6 +712,14 @@ export class ProgressSet {
         )
       : "tropical";
   }
+
+  get locStr(): string {
+    return latLngToLocString(this.geo.lat, this.geo.lng);
+  }
+
+  isSame(panelData: LocDt): boolean {
+    return this.locStr === panelData.loc && this.jd === panelData.jd;
+  }
 }
 
 /*
@@ -796,6 +808,7 @@ export class ITime {
   year = 0;
 
   constructor(inData: any = null) {
+    console.log(inData)
     if (inData instanceof Object) {
       Object.entries(inData).forEach(([key, val]) => {
         switch (key) {
@@ -864,6 +877,7 @@ export class PointSet {
             case "coasc1":
             case "coasc2":
             case "equasc":
+            case "mc":
             case "mcAlt":
             case "mcAzi":
             case "mcDec":
@@ -915,10 +929,7 @@ export class AstroChart {
 
   bodies: Graha[] = []; // array of celestial bodies
   hsets: HouseSet[] = [];
-  indianTime = new ITime();
   riseSets: TransitSet[] = [];
-  sphutas: SphutaSet[] = [];
-  upagrahas: SphutaSet[] = [];
   private ascendantVariants: Variant[] = [];
 
   constructor(inData: any = null, tz: any = null, placeNameString = "") {
@@ -931,7 +942,6 @@ export class AstroChart {
         indianTime,
         ayanamshas,
         riseSets,
-        transitions,
         variants,
         sphutas,
         upagrahas,
@@ -1008,9 +1018,6 @@ export class AstroChart {
       if (geo instanceof Object) {
         this.geo = new GeoLoc(geo);
       }
-      if (indianTime instanceof Object) {
-        this.indianTime = new ITime(indianTime);
-      }
       if (ayanamshas instanceof Array) {
         this.ayanamshas = ayanamshas
           .filter((row) => row instanceof Object)
@@ -1034,20 +1041,6 @@ export class AstroChart {
           for (const row of variants) {
             if (row instanceof Object) {
               this.addVariant(row);
-            }
-          }
-        }
-        if (sphutas instanceof Array) {
-          for (const row of sphutas) {
-            if (row instanceof Object) {
-              this.sphutas.push(new SphutaSet(row, true));
-            }
-          }
-        }
-        if (upagrahas instanceof Array) {
-          for (const row of upagrahas) {
-            if (row instanceof Object) {
-              this.upagrahas.push(new SphutaSet(row));
             }
           }
         }
@@ -1140,12 +1133,21 @@ export class AstroChart {
     }
   }
 
-  get hasSphutas(): boolean {
-    return this.sphutas.length > 0;
+  get isNotTropical(): boolean {
+    let refKey = this.ayanamshaKey;
+    return notEmptyString(refKey) && refKey.startsWith("tropic") === false;
   }
 
-  get hasUpagrahas(): boolean {
-    return this.upagrahas.length > 0;
+  get isValid() {
+    return this.bodies.length > 2;
+  }
+
+  get locStr(): string {
+    return latLngToLocString(this.geo.lat, this.geo.lng);
+  }
+
+  isSame(panelData: LocDt): boolean {
+    return this.locStr === panelData.loc && this.jd === panelData.jd;
   }
 }
 
@@ -1442,6 +1444,15 @@ export class SunTransitList {
   get hasData() {
     return this.items.length > 0;
   }
+
+  get locStr(): string {
+    return latLngToLocString(this.geo.lat, this.geo.lng);
+  }
+
+  isSame(panelData: LocDt): boolean {
+    return this.locStr === panelData.loc && this.jd === panelData.jd;
+  }
+  
 }
 
 export class TransitList {
@@ -1528,6 +1539,14 @@ export class TransitList {
 
   get hasData() {
     return this.sets.length > 0;
+  }
+
+  get locStr(): string {
+    return latLngToLocString(this.geo.lat, this.geo.lng);
+  }
+
+  isSame(panelData: LocDt): boolean {
+    return this.locStr === panelData.loc && this.jd === panelData.jd;
   }
 
   rows() {

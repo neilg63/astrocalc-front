@@ -89,7 +89,8 @@ export default function Root() {
             <Routes>
               <FileRoutes />
             </Routes>
-            <div class="background-container"></div>
+            <div class="bg-container background-container"></div>
+            <div class="bg-container background-container-top"></div>
           </ErrorBoundary>
         </Suspense>
         <Scripts />

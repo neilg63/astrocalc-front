@@ -7,21 +7,13 @@ interface TabItem {
   label: string;
   value: string;
   name: string;
-  subs?: TabItem[];
 }
 
-
-const transitModes: TabItem[] = [
-  { label: "Extended transits for the Sun, Moon and core planets", value: "standard", name: "Standard" },
-  { label: "Extended Sun rise and set phases with min and max altitudes", value: "sun", name: "Sun" },
-  // { label: "Transposed natal transits", value: "transposed", name: "Natal" },
-];
-
 const tabItems: TabItem[] = [
-  { label: "Core planetary positions, transits and special degrees", value: "core", name: "Core", subs: [] },
-  { label: "Extended planetary positions over time", value: "extended", name: "Extended", subs: [] },
-  { label: "Sun, planetary and natal transits", value: "transitions", name: "Rise / Set", subs: transitModes },
-  // { label: "Planetary orbits and retrograde phases over time", value: "stations", name: "Orbits", subs: [] },
+  { label: "Core planetary positions, transits and special degrees", value: "core", name: "Core" },
+  { label: "Extended planetary positions over time", value: "extended", name: "Extended" },
+  { label: "Extended sun rise and set times", value: "transitions_sun", name: "Sun Rise/Set" },
+  { label: "Sequential transitions of Sun, Moon and planets", value: "transitions_bodies", name: "Transitions" },
 ];
 
 
@@ -53,22 +45,9 @@ export default function TabSelector({ pane, setPane, parent }: { pane: Accessor<
       
     }
   }
-  const tabRows = () => {
-    if (hasParent) {
-      const parentRef = parent instanceof Function ? parent() : "";
-      const parRow = tabItems.find(r => r.value === parentRef);
-      if (parRow instanceof Object) {
-        return parRow.subs instanceof Array ? parRow.subs : []
-      } else {
-        return []
-      }
-    } else {
-      return tabItems;
-    }
-  }
 
   return <ButtonGroup class={tabSelectorClasses()} variant="outlined" aria-label="outlined button group" onClick={handleChange}>
-    <For each={tabRows()}>
+    <For each={tabItems}>
       {(item) => <Tooltip label={item.label} single={true}><Button variant={itemType(item.value)}  value={item.value}>{item.name}</Button></Tooltip>}
     </For>
   </ButtonGroup>

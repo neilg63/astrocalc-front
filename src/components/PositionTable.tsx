@@ -7,8 +7,6 @@ import DegreeTip from "./DegreeTip";
 
 export default function PositionTable({ data, applyAya }: {data: AstroChart, applyAya: boolean}) {
   const ayaOffset = applyAya ? data.ayanamsha : 0;
-  //const toDegDns = (deg: number): string => degAsDms(subtractLng360(deg, ayaOffset));
-  const singleVariantSetMode = data.hasVariants && data.numVariants === 1;
 
   const buildLngLabel = (item: Graha) => {
     const parts = [tropicalDecHint(item.lng)]
@@ -38,7 +36,7 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
     const grid = toTabGrid();
     navigator.clipboard.writeText(grid);
   }
-  const footColSpan = singleVariantSetMode ? 14 : 9;
+  const footColSpan = 9;
   const modeClasseNames = applyAya ? ['sidereal-mode'] : ['tropical-mode'];
   const modeClasses = modeClasseNames.join(" ");
   return <table class={modeClasses}>
@@ -53,13 +51,6 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
         <th class="dec">Declination</th>
         <th class="azi">Azimuth</th>
         <th class="alt">Altitude</th>
-        <Show when={singleVariantSetMode}>
-          <th class="sign">Sign</th>
-          <th class="house">House</th>
-          <th class="nakshatra">Nakshatra</th>
-          <th class="chara-karaka">Chara Karaka</th>
-          <th class="relationship">Relationship</th>
-        </Show>
       </tr>
     </thead>
     <tbody>
@@ -71,11 +62,11 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
           </td>
           <td class="numeric lng-speed"><Show when={item.showLngSpeed}>
             {decPlaces6(item.lngSpeed)}
-          </Show></td>
+          </Show><Show when={!item.showLngSpeed}>-</Show></td>
           <td class="numeric lat"><Show when={item.showLat}>
             <DegreeTip label={buildLatLabel(item)} degree={item.lat} />
-          </Show></td>
-          <td class="numeric lat-speed"><Show when={item.showLatSpeed}>{decPlaces6(item.latSpeed)}</Show></td>
+          </Show><Show when={!item.showLat}>-</Show></td>
+          <td class="numeric lat-speed"><Show when={item.showLatSpeed}>{decPlaces6(item.latSpeed)}</Show><Show when={!item.showLatSpeed}>-</Show></td>
           <td class="numeric ras">
             <DegreeTip label={standardDecHint(item.rectAscension)} degree={item.rectAscension} />
           </td>
@@ -86,21 +77,9 @@ export default function PositionTable({ data, applyAya }: {data: AstroChart, app
             <DegreeTip label={standardDecHint(item.azimuth)} degree={item.azimuth} />
           </td>
           <td class="numeric alt">
-            <DegreeTip label={standardDecHint(item.altitude)} degree={item.altitude} />
+            <Show when={item.showAltitude}><DegreeTip label={standardDecHint(item.altitude)} degree={item.altitude} /></Show>
+            <Show when={!item.showAltitude}>-</Show>
           </td>
-          <Show when={singleVariantSetMode}>
-            <td class="numeric sign sid-based">{item.firstVariant.sign}</td>
-            <td class="numeric house sid-based">
-              {item.firstVariant.house}
-            </td>
-            <td class="numeric nakshatra sid-based">{item.firstVariant.nakshatra}</td>
-            <td class="numeric chara-karaka sid-based"><Show when={ item.firstVariant.hasCharaKaraka}>{ item.firstVariant.charaKaraka}</Show></td>
-            <td class="relationship sid-based">
-              <Show when={item.firstVariant.hasRelationship}>
-                {camelToTitle(item.firstVariant.relationship)}
-              </Show>
-            </td>
-          </Show>
       </tr>}
       </For>
     </tbody>
