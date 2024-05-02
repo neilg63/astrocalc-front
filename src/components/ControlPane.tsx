@@ -309,8 +309,10 @@ export default function ControlPanel() {
           const proceed = !checkInitialised || (!init() && lat() === 0 && lng() === 0)
           setDefLat(latitude);
           setDefLng(longitude);
-          if (proceed) {
+          if (proceed || checkInitialised) {
             syncLatLng(latitude, longitude);
+          }
+          if (proceed) {
             toLocal("current-geo", new GeoLoc({ lat: latitude, lng: longitude }));
           }
           const dtStr = new Date().toISOString().split('.').shift();
