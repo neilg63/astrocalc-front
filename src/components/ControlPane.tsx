@@ -309,6 +309,7 @@ export default function ControlPanel() {
           const proceed = !checkInitialised || (!init() && lat() === 0 && lng() === 0)
           setDefLat(latitude);
           setDefLng(longitude);
+          
           if (proceed || checkInitialised) {
             syncLatLng(latitude, longitude);
           }
@@ -319,10 +320,11 @@ export default function ControlPanel() {
           const locStr = latLngToLocString(latitude, longitude);
           fetchTz(dtStr as string, locStr, true).then(result => {
             const { time, place } = result;
+            const c = chart();
             if (place instanceof Object) {
               const plStr = extractPlaceNameString(place);
               setLocalPlaceName(plStr);
-              const hasPlace = notEmptyString(placeString());
+              const hasPlace = c.isValid && notEmptyString(placeString());
               if (!hasPlace && defLat() === lat()) {
                 setPlaceString(plStr);
               }
@@ -331,7 +333,6 @@ export default function ControlPanel() {
               const { abbreviation } = time;
               setLocalZoneAbbr(abbreviation);
             }
-            let c = chart();
             if (!c.isValid) {
               setTimeout(() => {
                 fetchChart()
