@@ -4,7 +4,7 @@ import { formatDate, notEmptyString, yearsAgoDateString } from "~/api/utils";
 import { updateInputValue, updateIntValue } from "~/api/forms";
 import { decPlaces4, degAsLatStr, degAsLngStr, extractPlaceNameString, hrsMinsToString, smartCastInt, yearToISODateTime } from "~/api/converters";
 import { fetchGeo, getGeoTzOffset } from "~/api/geoloc-utils";
-import { AstroChart, GeoLoc, ProgressSet, SunTransitList, TimeZoneInfo, TransitList, latLngToLocString } from "~/api/models";
+import { AstroChart, GeoLoc, OrbitList, ProgressSet, SunTransitList, TimeZoneInfo, TransitList, latLngToLocString } from "~/api/models";
 import { currentJulianDate, dateStringToJulianDate, julToDateParts, localDateStringToJulianDate } from "~/api/julian-date";
 import ChartData from "./ChartaData";
 import { clearLocal, fromLocal, fromLocalDays, toLocal } from "~/lib/localstore";
@@ -22,6 +22,7 @@ import SlideToggle from "./SlideToggle";
 import ProgressTable from "./ProgressTable";
 import TransitListTable from "./TransitListTable";
 import SunTransitListTable from "./SunTransitListTable";
+import StationsTable from "./StationsTable";
 
 const buildDateTimeStrings = (): LocalDateTimeParts => {
   const dateParts = new Date().toString().split(" ");
@@ -37,10 +38,8 @@ const buildDateTimeStrings = (): LocalDateTimeParts => {
 }
 
 export default function ControlPanel() {
-  const [dateString, setDateString] = createSignal(yearsAgoDateString(30));
+  const [dateString, setDateString] = createSignal(yearsAgoDateString(20));
   const [timeString, setTimeString] = createSignal('12:00');
-  const [endDateString, setEndDateString] = createSignal(yearsAgoDateString(0));
-  const [endTimeString, setEndTimeString] = createSignal('12:00');
   const [offsetHrs, setOffsetHrs] = createSignal(0);
   const [offsetMins, setOffsetMins] = createSignal(0);
   const [tz, setTz] = createSignal(new TimeZoneInfo());
@@ -66,6 +65,7 @@ export default function ControlPanel() {
   const [currTimeZone, setCurrTimeZone] = createSignal(timeZone);
   const [localPlaceName, setLocalPlaceName] = createSignal('N/A')
   const [localZoneAbbr, setLocalZoneAbbr] = createSignal('')
+  const [stationsData, setStationsData] = createSignal(new OrbitList());
   const [pane, setPane] = createSignal('core')
   // const [mode, setMode] = createSignal('standard');
   
@@ -164,14 +164,15 @@ export default function ControlPanel() {
         const sunMode = paneKey.endsWith("_sun");
         fetchExtRSData(sunMode);
         break;
+      case 'stations':
+        fetchOrbitData();
+        break;
     }
   }
 
   const openChart = () => setShowData(true);
   const updateDate = (e: Event) => updateInputValue(e, setDateString, true);
   const updateTime = (e: Event) => updateInputValue(e, setTimeString, false);
-  const updateEndDate = (e: Event) => updateInputValue(e, setEndDateString, true);
-  const updateEndTime = (e: Event) => updateInputValue(e, setEndTimeString, false);
   const updateUnits = (e: Event) => updateIntValue(e, setNumUnits);
   const updateFrequency = (e: Event) => updateIntValue(e, setFrequency);
   const updateOffset = (e: Event, minuteMode = false) => {
@@ -251,6 +252,7 @@ export default function ControlPanel() {
         case 'extended':
         case 'transitions_sun':
         case 'transitions_bodies':
+        case 'stations':  
           return showData();
         default:
           return true;
@@ -455,24 +457,37 @@ export default function ControlPanel() {
   }
 
   const fetchOrbitData = () => {
-    const { loc, jd } = extractDtLoc();
     setShowData(false);
     const dtStr = dateString();
-    const dt2Str = endDateString();
-    const startYear = notEmptyString(dtStr) ? dtStr.split('-').shift() : '1973'; 
-    const endYear = notEmptyString(dtStr) ? dt2Str.split('-').shift() : '2043'; 
+    const startYear = notEmptyString(dtStr) ? dtStr.split('-').shift() : '1999'; 
+    const endYear = '2051'; 
     const dt = yearToISODateTime(startYear as string);
     const dt2 = yearToISODateTime(endYear as string);
-    fetchOrbitPhases({ dt, dt2 },).then(result => {
-      if (result instanceof Object) {
-          const trList = new TransitList(result, tz(), placeString(), numUnits());
-          setTransitList(trList);
-          toLocal('planet-orbits', trList);
-        setTimeout(() => {
-          setShowData(true);
-        }, 250)
-      }
-    });
+    const cacheKey = 'planet-orbits';
+    const stored = fromLocal(cacheKey, 31 * 86400);
+    if (stored.valid && !stored.expired) {
+      const utcOffset = tzOffset()
+      const orbList = new OrbitList(stored.data, utcOffset);
+      setStationsData(orbList);
+      setTimeout(() => {
+        setShowData(true);
+      }, 250);
+    } else {
+      fetchOrbitPhases({ dt, dt2 },).then(result => {
+        if (result instanceof Object) {
+          const { items, start } = result;
+          if (items instanceof Array && start instanceof Object) {
+            const utcOffset = tzOffset()
+            const orbList = new OrbitList(result, utcOffset);
+            setStationsData(orbList);
+            toLocal('planet-orbits', result);
+            setTimeout(() => {
+              setShowData(true);
+            }, 250)
+          }
+        }
+      });
+    }
   }
 
   const matchTransitStoreKey = (mode = "standard") => {
@@ -542,15 +557,6 @@ export default function ControlPanel() {
       lbls.push([degAsLatStr(lat), degAsLngStr(lng)].join(', '))
     }
     return lbls.join(": ");
-  }
-
-  const showEndDatetIme = () => {
-    switch (pane()) {
-      case "stations":
-        return true;
-      default:
-        return false;
-    }
   }
 
   const showDaysSpan = () => {
@@ -629,6 +635,9 @@ export default function ControlPanel() {
       case 'transitions_sun':
       case 'transitions_bodies':
         restoreExtTransitData(key);
+        break;
+      case 'stations':
+        fetchOrbitData();
         break;
     }
     toLocal('pane', key);
@@ -734,10 +743,6 @@ export default function ControlPanel() {
                 <input type="number" value={frequency()} min="1" max="24" onChange={(e) => updateFrequency(e)} class="numeric frequency" />
               </Tooltip>
           </Show>
-          <Show when={showEndDatetIme()}>
-            <input type="date" value={endDateString()} size="12" onChange={(e) => updateEndDate(e)} />
-              <input type="time" value={endTimeString()} size="12" onChange={(e) => updateEndTime(e)} />
-          </Show>
         </div>
         <div class="location-bar flex flex-row">
           <PlaceNameSelector value={placeString} onChange={updatePlaceName} label="Locality, region" />
@@ -789,14 +794,13 @@ export default function ControlPanel() {
         <Show when={showPane('core')}><ChartData data={chart()} applyAya={applyAya()} /></Show>
         <Show when={showPane('extended')}><div class="extended"><ProgressTable data={progressSet()} /></div></Show>
         <Show when={showPane('transitions_sun')}><div class="transitions sun-rise-sets">
-          
           <SunTransitListTable data={sunTransitList()} />
           </div>
         </Show>
         <Show when={showPane('transitions_bodies')}><div class="transitions bodies-rise-sets">
         <TransitListTable data={transitList()} />
           </div></Show>
-        <Show when={showPane('stations')}><div class="stations">To do: Planetary motions </div></Show>
+        <Show when={showPane('stations')}><StationsTable data={stationsData()} /></Show>
       </div>
     </>
   );

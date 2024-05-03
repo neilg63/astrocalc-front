@@ -545,15 +545,15 @@ main {
 }
 
 .top-grid {
-  max-width: 70rem;
+  max-width: 80rem;
   margin: 0 auto;
   display: block;
   padding: 0 5%;
   @media (min-width: 70rem) {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    grid-template-areas: "datetime datetime options options"
-                        "location location location actions";
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    grid-template-areas: "datetime datetime datetime options options"
+                        "location location location location actions";
   }
   /* @media (min-width: 90rem) {
     grid-template-columns: 5fr 3fr;

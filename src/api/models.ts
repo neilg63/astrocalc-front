@@ -1577,14 +1577,34 @@ export class TransitList {
 }
 
 export class OrbitStation {
-  key = "";
-  stations: OrbitStation[] = [];
+  type = "";
+  jd = 0;
+  lng = 0;
+  speed = 0;
+  
 
   constructor(inData: any = null) {
     if (inData instanceof Object) {
-      const { items } = inData;
+      const { type, jd, lng, speed } = inData;
+      if (notEmptyString(type)) {
+        this.type = type;
+      }
+      if (jd) {
+        this.jd = jd;
+      }
+      if (typeof lng === "number") {
+        this.lng = lng;
+      }
+      if (typeof speed === "number") {
+        this.speed = speed;
+      }
     }
   }
+
+  get hasData(): boolean {
+    return notEmptyString(this.type, 3) && this.jd > 1000;
+  }
+
 }
 
 export class OrbitSet {
@@ -1593,22 +1613,51 @@ export class OrbitSet {
 
   constructor(inData: any = null) {
     if (inData instanceof Object) {
-      const { items } = inData;
-      if (items instanceof Object) {
-        const { items } = inData;
+      const { key, stations } = inData;
+      if (key) {
+        this.key = key;
+      }
+      if (stations instanceof Array) {
+        this.stations = stations.map(row => new OrbitStation(row));
       }
     }
   }
 }
 
 export class OrbitList {
-  dt = "1973-01-01T00:00:00";
-  dt2 = "1973-01-01T00:00:00";
+  startJd = 0;
+  endJd = 0;
+  utcOffset = 0;
   items: OrbitSet[] = [];
 
-  constructor(inData: any = null) {
+  constructor(inData: any = null, utcOffset = 0) {
+    if (typeof utcOffset === "number") {
+      this.utcOffset = utcOffset;
+    }
     if (inData instanceof Object) {
-      const { items } = inData;
+      const { items, start, end } = inData;
+      if (items instanceof Array) {
+        this.items = items.filter(row => row instanceof Object).map(row => new OrbitSet(row));
+      }
+      if (start) {
+        if (start.jd) {
+          this.startJd = start.jd
+        }
+      }
+      if (end) {
+        if (end.jd) {
+          this.endJd = start.jd
+        }
+      }
     }
   }
+
+  get hasData(): boolean {
+    return this.items.length > 0 && this.items[0].stations.length > 0;
+  }
+
+  get bodyKeys(): string[] {
+    return this.items.map(item => item.key);
+  }
+
 }

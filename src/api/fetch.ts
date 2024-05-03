@@ -155,18 +155,17 @@ export const fetchOrbitPhases = async (
   const hasStart = filter.has("dt");
   const hasEnd = filter.has("dt2");
   if (!hasStart || !hasEnd) {
-    const currYear = new Date().getFullYear();
     if (!hasStart) {
-      const startYear = currYear - 50;
+      const startYear = 2000;
       const dt = yearToISODateTime(startYear);
       filter.set("dt", dt);
     }
     if (!hasEnd) {
-      const endYear = currYear + 20 + 1;
+      const endYear = 2051;
       const dt2 = yearToISODateTime(endYear);
       filter.set("dt2", dt2);
     }
   }
-  const method = "planet-station";
+  const method = "planet-stations";
   return await fetchContentAstro(method, Object.fromEntries(filter.entries()));
 };
