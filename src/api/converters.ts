@@ -1176,11 +1176,27 @@ export const hrsMinsToString = (
   return parts.join(" ").trim();
 };
 
-export const secsToString = (secs = 0, showPlus = true) => {
+export const secsToString = (secs = 0, showPlus = true): string => {
   const hrs = Math.floor(secs / 3600);
   const mins = Math.floor(secs / 60) % 60;
   const seconds = Math.floor(secs) % 60;
   return hrsMinsToString(hrs, mins, seconds, showPlus);
+};
+
+export const daysToString = (days = 0): string => {
+  const daysInt = Math.floor(days);
+  const remainder = days - daysInt;
+  const hrs = Math.round(remainder * 24);
+  const parts: string[] = [];
+  if  (days > 0) {
+    const daysLbl = daysInt === 1? 'day' : 'days';
+    parts.push(`${daysInt} ${daysLbl}`)
+  }
+  if  (hrs > 0) {
+    const hrsLbl = hrs === 1? 'hour' : 'hours';
+    parts.push(`${hrs} ${hrsLbl}`)
+  }
+  return parts.join(' and ');
 };
 
 export const secsToPeriod = (secs = 0) => {

@@ -1,10 +1,10 @@
 import { Show, createEffect, createSignal } from "solid-js";
-import { fetchChartData, fetchTz, fetchProgressData, fetchExtendedRiseSetTimes, fetchOrbitPhases } from "~/api/fetch";
+import { fetchChartData, fetchTz, fetchProgressData, fetchExtendedRiseSetTimes, fetchOrbitPhases, fetchMoonPhases } from "~/api/fetch";
 import { formatDate, notEmptyString, yearsAgoDateString } from "~/api/utils";
 import { updateInputValue, updateIntValue } from "~/api/forms";
 import { decPlaces4, degAsLatStr, degAsLngStr, extractPlaceNameString, hrsMinsToString, smartCastInt, yearToISODateTime } from "~/api/converters";
 import { fetchGeo, getGeoTzOffset } from "~/api/geoloc-utils";
-import { AstroChart, GeoLoc, OrbitList, ProgressSet, SunTransitList, TimeZoneInfo, TransitList, latLngToLocString } from "~/api/models";
+import { AstroChart, GeoLoc, OrbitList, ProgressSet, SunTransitList, TimeZoneInfo, TransitList, latLngToLocString, MoonPhaseList } from "~/api/models";
 import { currentJulianDate, dateStringToJulianDate, julToDateParts, localDateStringToJulianDate } from "~/api/julian-date";
 import ChartData from "./ChartaData";
 import { clearLocal, fromLocal, fromLocalDays, toLocal } from "~/lib/localstore";
@@ -23,6 +23,9 @@ import ProgressTable from "./ProgressTable";
 import TransitListTable from "./TransitListTable";
 import SunTransitListTable from "./SunTransitListTable";
 import StationsTable from "./StationsTable";
+import MoonPhaseTable from "./MoonPhaseTable";
+
+const DEFAULT_START_YEARS_AGO = 0;
 
 const buildDateTimeStrings = (): LocalDateTimeParts => {
   const dateParts = new Date().toString().split(" ");
@@ -38,7 +41,7 @@ const buildDateTimeStrings = (): LocalDateTimeParts => {
 }
 
 export default function ControlPanel() {
-  const [dateString, setDateString] = createSignal(yearsAgoDateString(20));
+  const [dateString, setDateString] = createSignal(yearsAgoDateString(DEFAULT_START_YEARS_AGO));
   const [timeString, setTimeString] = createSignal('12:00');
   const [offsetHrs, setOffsetHrs] = createSignal(0);
   const [offsetMins, setOffsetMins] = createSignal(0);
@@ -61,6 +64,7 @@ export default function ControlPanel() {
   const { dateTime, timeZone } = buildDateTimeStrings();
   const [transitList, setTransitList] = createSignal(new TransitList());
   const [sunTransitList, setSunTransitList] = createSignal(new SunTransitList());
+  const [moonPhaseList, setMoonPhaseList] = createSignal(new MoonPhaseList());
   const [currDateString, setCurrDateString] = createSignal(dateTime)
   const [currTimeZone, setCurrTimeZone] = createSignal(timeZone);
   const [localPlaceName, setLocalPlaceName] = createSignal('N/A')
@@ -167,6 +171,9 @@ export default function ControlPanel() {
       case 'stations':
         fetchOrbitData();
         break;
+      case 'moonphases':
+        buildMoonPhases();
+        break;
     }
   }
 
@@ -253,6 +260,7 @@ export default function ControlPanel() {
         case 'transitions_sun':
         case 'transitions_bodies':
         case 'stations':  
+        case 'moonphases': 
           return showData();
         default:
           return true;
@@ -490,6 +498,37 @@ export default function ControlPanel() {
     }
   }
 
+  const buildMoonPhases = () => {
+    setShowData(false);
+    const { loc, jd } = extractDtLoc();
+    const startJd = Math.round(jd as number) - 16;
+    const num = 14;
+    const locCacheKey = loc.split(',').map(dgStr => parseInt(dgStr, 10).toString()).join('_');
+    const cacheKey = `moon_phases_${startJd}_${locCacheKey}`;
+    const stored = fromLocal(cacheKey, 31 * 86400);
+    if (stored.valid && !stored.expired) {
+      const moonPhaseList = new MoonPhaseList(stored.data, tz(), placeString(), 12);
+      setMoonPhaseList(moonPhaseList)
+      setTimeout(() => {
+        setShowData(true);
+      }, 250);
+    } else {
+      fetchMoonPhases({ jd: startJd, loc, num },).then(result => {
+        if (result instanceof Object) {
+          const { phases } = result;
+          if (phases instanceof Array && phases.length > 3) {
+            const moonList = new MoonPhaseList(result,  tz(), placeString(), 12);
+            if (moonList.hasItems) {
+              setMoonPhaseList(moonList)
+              setShowData(true);
+            }
+            toLocal(cacheKey, result);
+          }
+        }
+      });
+    }
+  }
+
   const matchTransitStoreKey = (mode = "standard") => {
     switch (mode) {
       case 'sun':
@@ -511,7 +550,7 @@ export default function ControlPanel() {
     let hasStoredData = false;
     let hasData = false;
     if (hasStored) {
-      const trList = modeKey === 'standard' ? new TransitList(stored.data) : modeKey === 'sun' ? new SunTransitList(stored.data) : null;
+      const trList = modeKey === 'standard' ? new TransitList(stored.data) : modeKey === 'sun' ? new SunTransitList(stored.data, tz(), placeString(), numUnits()) : null;
       const panelData = extractDtLoc();
       if (trList instanceof TransitList || trList instanceof SunTransitList) {
         if (trList instanceof TransitList) {
@@ -638,6 +677,9 @@ export default function ControlPanel() {
         break;
       case 'stations':
         fetchOrbitData();
+        break;
+      case 'moonphases':
+        buildMoonPhases();
         break;
     }
     toLocal('pane', key);
@@ -801,6 +843,7 @@ export default function ControlPanel() {
         <TransitListTable data={transitList()} />
           </div></Show>
         <Show when={showPane('stations')}><StationsTable data={stationsData()} /></Show>
+        <Show when={showPane('moonphases')}><MoonPhaseTable data={moonPhaseList()} /></Show>
       </div>
     </>
   );

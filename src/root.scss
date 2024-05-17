@@ -47,6 +47,14 @@ body {
   filter: invert(1);
 }
 
+.dark-mode {
+  .subdomain-navigator,
+  .subdomain-info,
+  td.icon {
+    filter: invert(1);
+  }
+}
+
 .display-options {
   position: fixed;
   top: 0.25em;
@@ -151,8 +159,21 @@ main {
       &.numeric {
         text-align: right;
       }
+      &.icon {
+        font-size: 1.5em;
+        text-align: center;
+        vertical-align: center;
+      }
+      &.phase {
+        text-align: center;
+        vertical-align: center;
+      }
     }
-
+    td, th {
+      &.left {
+        text-align: left;
+      }
+    }
     &.sidereal-mode {
       .lng {
         font-style: italic;

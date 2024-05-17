@@ -2,6 +2,7 @@ import { astroCalcBase, geoTimeBase } from "./settings";
 import { isNumeric, notEmptyString, renderDateRange } from "./utils";
 import { ParamSet } from "./interfaces";
 import { smartCastInt, yearToISODateTime } from "./converters";
+import { currentJulianDay } from "./julian-date";
 
 const matchService = (service = "") => {
   switch (service) {
@@ -167,5 +168,20 @@ export const fetchOrbitPhases = async (
     }
   }
   const method = "planet-stations";
+  return await fetchContentAstro(method, Object.fromEntries(filter.entries()));
+};
+
+export const fetchMoonPhases = async (
+  params: ParamSet,
+): Promise<any> => {
+  const filter: Map<string, any> = new Map(Object.entries(params));
+  const hasStart = filter.has("dt") || filter.has("jd");
+  if (!hasStart) {
+    filter.set("jd", currentJulianDay());
+  }
+  if (!filter.has("num")) {
+    filter.set("num", 6);
+  }
+  const method = "moon-phases";
   return await fetchContentAstro(method, Object.fromEntries(filter.entries()));
 };

@@ -14,6 +14,7 @@ const tabItems: TabItem[] = [
   { label: "Extended planetary positions over time", value: "extended", name: "Extended" },
   { label: "Extended sun rise and set times", value: "transitions_sun", name: "Sun Rise/Set" },
   { label: "Sequential transitions of Sun, Moon and planets", value: "transitions_bodies", name: "Transitions" },
+  { label: "Moon phases", value: "moonphases", name: "Moon Phases" },
   { label: "Retro-grade motion and peak speeds of the other planets", value: "stations", name: "Retrograde" },
 ];
 

@@ -1661,3 +1661,97 @@ export class OrbitList {
   }
 
 }
+
+export class MoonPhase {
+  angle = -1;
+  days = -1;
+  jd = 0;
+  num = 0;
+  waxing = false;
+
+  constructor(inData: any = null) {
+    if (inData instanceof Object) {
+      const { angle, days, jd, num, utc, waxing } = inData;
+      if (typeof angle === "number") {
+        this.angle = angle;
+      }
+      if (typeof days === "number") {
+        this.days = days;
+      }
+      if (typeof jd === "number") {
+        this.jd = jd;
+      }
+      if (typeof num === "number") {
+        this.num = num;
+      }
+      this.waxing = waxing === true;
+    }
+  }
+
+  get isValid() {
+    return this.jd > 1000 && this.num > 0;
+  }
+
+  get hasDayLength() {
+    return this.days > 0;
+  }
+
+}
+
+export class MoonPhaseList {
+
+  jd = 0;
+
+  geo = new GeoLoc();
+
+  placeName = "";
+
+  tz = new TimeZoneInfo();
+
+  num = 0;
+
+  items: MoonPhase[] = [];
+
+  constructor(
+    inData: any = null,
+    newTz = new TimeZoneInfo(),
+    placeString = "",
+    num = 12
+  ) {
+    const isObj = inData instanceof Object;
+    this.tz = newTz;
+    this.placeName = placeString;
+    this.num = num;
+    if (isObj) {
+      const { date, geo, phases } = inData;
+      
+      if (geo instanceof Object) {
+        this.geo = new GeoLoc(geo);
+      }
+      if (date) {
+        const { jd } = date;
+        if (jd) {
+          this.jd = jd;
+        }
+      }
+      this.items = phases.map((ph: any) => {
+        return new MoonPhase(ph)
+      }).filter((ph: MoonPhase) => ph.isValid && ph.hasDayLength);
+
+    }
+  }
+
+
+  get locStr(): string {
+    return latLngToLocString(this.geo.lat, this.geo.lng);
+  }
+
+  isSame(panelData: LocDt): boolean {
+    return this.locStr === panelData.loc && this.jd === panelData.jd;
+  }
+
+  get hasItems(): boolean {
+    return this.items.length > 0 && this.jd > 0;
+  }
+  
+}
